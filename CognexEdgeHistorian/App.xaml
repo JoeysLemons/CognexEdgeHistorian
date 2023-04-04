@@ -1,0 +1,27 @@
+﻿<Application x:Class="CognexEdgeHistorian.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:viewModel="clr-namespace:CognexEdgeHistorian.MVVM.ViewModel"
+             xmlns:view="clr-namespace:CognexEdgeHistorian.MVVM.View"
+             xmlns:local="clr-namespace:CognexEdgeHistorian"
+             StartupUri="MainWindow.xaml"
+             Exit="App_OnExit">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Themes/ColorScheme.xaml"/>
+                <ResourceDictionary Source="Themes/TextBox.xaml"/>
+                <ResourceDictionary Source="Themes/Button.xaml"/>
+                <ResourceDictionary Source="Themes/TagBrowserItem.xaml"/>
+                <ResourceDictionary Source="Themes/InvisibleToggleButton.xaml"/>
+                <ResourceDictionary Source="Themes/ScrollBarStyle.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            <DataTemplate DataType="{x:Type viewModel:DebugViewModel}">
+                <view:DebugView/>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type viewModel:ConnectionsViewModel}">
+                <view:ConnectionsView/>
+            </DataTemplate>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

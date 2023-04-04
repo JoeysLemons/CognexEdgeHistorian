@@ -1,0 +1,143 @@
+﻿using CognexEdgeHistorian.Core;
+using Opc.Ua;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Input;
+using System.Windows;
+using Opc.Ua.Client;
+using System.Windows.Controls;
+using System.Windows.Data;
+using System.Collections.ObjectModel;
+using CognexEdgeHistorian.MVVM.Model;
+using Opc.Ua.Server;
+using System.Net;
+using Org.BouncyCastle.Crypto.Digests;
+using Session = Opc.Ua.Client.Session;
+
+namespace CognexEdgeHistorian.MVVM.ViewModel
+{
+    public class ConnectionsViewModel : ViewModelBase
+    {
+        public ICommand ConnectToCamera { get; }
+        public ICommand DisconnectFromCamera { get; }
+        private CognexSession _selectedCamera;
+
+        public CognexSession SelectedCamera
+        {
+            get { return _selectedCamera; }
+            set 
+            {
+                _selectedCamera = value;
+                UpdateTagBrowser();
+            }
+        }
+
+        private List<string> _allTags;
+        public List<string> AllTags
+        {
+            get { return _allTags; }
+            set
+            { 
+                _allTags = value;
+                OnPropertyChanged(nameof(AllTags));
+            }
+        }
+        private static ObservableCollection<string> _selectedTags;
+        public static ObservableCollection<string> SelectedTags
+        {
+            get { return _selectedTags; }
+            set 
+            {
+                _selectedTags = value; 
+            }
+        }
+        public static ObservableCollection<CognexSession> SessionList { get; set; }
+        public static void AddSelectedTag(string tagName)
+        {
+            SelectedTags.Add(tagName);
+        }
+        public static void RemoveSelectedTag(string tagName)
+        {
+            SelectedTags.Remove(tagName);
+        }
+
+        public void Disconnect(object parameter)
+        {
+            CognexSession result = SessionList.FirstOrDefault(s => s.Endpoint == (string)parameter);
+            result.Session?.Dispose();
+        }
+        public async void Connect(object parameter)
+        {
+            string endpoint = (string)parameter;
+            Session session;
+            var config = OPCUAUtils.CreateApplicationConfiguration();
+            await OPCUAUtils.InitializeApplication();
+            session = await OPCUAUtils.ConnectToServer(config, $"opc.tcp://{endpoint}");
+
+            ReferenceDescriptionCollection references;
+            Byte[] continuationPoint;
+
+            session.Browse(
+                null,
+                null,
+                ObjectIds.ObjectsFolder,
+                0u,
+                BrowseDirection.Forward,
+                ReferenceTypeIds.HierarchicalReferences,
+                true,
+                uint.MaxValue,
+                out continuationPoint,
+                out references);
+
+                SessionList.Add(new CognexSession(session, endpoint, session.SessionName, references));
+        }
+        private static async Task<List<string>> BrowseChildren(Session session, ReferenceDescriptionCollection references)
+        {
+            List<string> displayNames = new List<string>();
+            foreach (var reference in references)
+            {
+                string displayName = reference.DisplayName.ToString();
+                displayNames.Add(displayName);
+                Console.WriteLine($"DisplayName: {displayName}, NodeId: {reference.NodeId}");
+
+                ReferenceDescriptionCollection childReferences;
+                Byte[] continuationPoint;
+
+                session.Browse(
+                    null,
+                    null,
+                    ExpandedNodeId.ToNodeId(reference.NodeId, session.NamespaceUris),
+                    0u,
+                    BrowseDirection.Forward,
+                    ReferenceTypeIds.HierarchicalReferences,
+                    true,
+                    uint.MaxValue,
+                    out continuationPoint,
+                    out childReferences);
+
+                if (childReferences.Count > 0)
+                {
+                    List<string> childDisplayNames = await BrowseChildren(session, childReferences);
+                    displayNames.AddRange(childDisplayNames);
+                }
+            }
+
+            return displayNames;
+        }
+
+        public async void UpdateTagBrowser()
+        {
+            AllTags = await BrowseChildren(SelectedCamera.Session, SelectedCamera.References);
+        }
+        public ConnectionsViewModel()
+        {
+            ConnectToCamera = new RelayCommand(Connect);
+            DisconnectFromCamera = new RelayCommand(Disconnect);
+            SelectedTags = new ObservableCollection<string>();
+            SessionList = new ObservableCollection<CognexSession>();
+        }
+    }
+}

@@ -1,0 +1,28 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <SolidColorBrush x:Key="BrightPink" Color="#E91E63" />
+    <SolidColorBrush x:Key="BrightPinkSecondary" Color="#50E91E63" />
+    <SolidColorBrush x:Key="DarkPink" Color="#C2185B" />
+    <SolidColorBrush x:Key="DarkPinkSecondary" Color="#50C2185B" />
+    <SolidColorBrush x:Key="BrightPurple" Color="#9C27B0"/>
+    <SolidColorBrush x:Key="BrightPurpleSecondary" Color="#509C27B0"/>
+    <SolidColorBrush x:Key="DarkPurple" Color="#5727B0"/>
+    <SolidColorBrush x:Key="DarkPurpleSecondary" Color="#505727B0"/>
+    <SolidColorBrush x:Key="DarkBlue" Color="#272AB0"/>
+    <SolidColorBrush x:Key="DarkBlueSecondary" Color="#70272AB0"/>
+    <SolidColorBrush x:Key="Blue" Color="#276BB0"/>
+    <SolidColorBrush x:Key="BlueSecondary" Color="#50276BB0"/>
+    <SolidColorBrush x:Key="LightBlue" Color="#57ACDC"/>
+    <SolidColorBrush x:Key="LightBlueSecondary" Color="#5057ACDC"/>
+    <SolidColorBrush x:Key="LightGreen" Color="#57DCBE"/>
+    <SolidColorBrush x:Key="LightGreenSecondary" Color="#5057DCBE"/>
+    <SolidColorBrush x:Key="DarkGreen" Color="#60C689"/>
+    <SolidColorBrush x:Key="DarkGreenSecondary" Color="#5060C689"/>
+    <SolidColorBrush x:Key="Black" Color="#020519"/>
+    <SolidColorBrush x:Key="BlackSecondary" Color="#500b0a10"/>
+    <SolidColorBrush x:Key="White" Color="#F2F2F2"/>
+    <SolidColorBrush x:Key="WhiteSecondary" Color="#50F2F2F2"/>
+    <SolidColorBrush x:Key="ButtonHover" Color="#2E2E6B"/>
+    <SolidColorBrush x:Key="ButtonClick" Color="#01030F"/>
+    <SolidColorBrush x:Key="HoverColor" Color="#050c3b"/>
+</ResourceDictionary>

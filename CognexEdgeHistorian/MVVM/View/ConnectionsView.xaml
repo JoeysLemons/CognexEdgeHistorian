@@ -1,0 +1,146 @@
+﻿<UserControl x:Class="CognexEdgeHistorian.MVVM.View.ConnectionsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:controls="clr-namespace:CognexEdgeHistorian.Themes"
+             xmlns:local="clr-namespace:CognexEdgeHistorian.MVVM.View"
+             xmlns:core="clr-namespace:CognexEdgeHistorian.Core"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="950">
+    
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="2.5*"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="80"/>
+            <RowDefinition/>
+        </Grid.RowDefinitions>
+
+        <Border Grid.ColumnSpan="2"
+                x:Name="ConnectionPane"
+                Background="{StaticResource BlueSecondary}"
+                CornerRadius="5"
+                Margin="5,0,5,5"
+                Width="600"
+                HorizontalAlignment="Left">
+            <StackPanel Orientation="Horizontal">
+                <StackPanel Orientation="Vertical" Margin="10,10,5,0">
+                    <TextBlock Text="IP Address"
+                               Foreground="LightGray"
+                               FontSize="14"/>
+                    <TextBox x:Name="IPAddressTextBox"
+                             Width="125" Height="30"
+                             Margin="0,5,0,0"
+                             Template="{StaticResource TextBox}"
+                             Foreground="LightGray"
+                             Background="{StaticResource Black}"
+                             TextAlignment="Justify"
+                             VerticalContentAlignment="Center"/>
+                </StackPanel>
+                <Button Width="65" Height="30"
+                        Margin="0,22,0,0"
+                        Style="{StaticResource Button}"
+                        Background="{StaticResource Black}"
+                        Content="Connect"
+                        Foreground="LightGray"
+                        Command="{Binding ConnectToCamera}"
+                        CommandParameter="{Binding Text, ElementName=IPAddressTextBox}"/>
+                <Button Width="65" Height="30"
+                        Margin="5,22,0,0"
+                        Style="{StaticResource Button}"
+                        Background="{StaticResource Black}"
+                        Content="Disconnect"
+                        Foreground="LightGray"
+                        Command="{Binding DisconnectFromCamera}"
+                        CommandParameter="{Binding ElementName=ConnectedCameras, Path=SelectedItem.Endpoint}"/>
+            </StackPanel>
+        </Border>
+        <Border Grid.Row="2"
+                Margin="5,5,5,0"
+                Padding="5"
+                Background="{StaticResource BlueSecondary}"
+                CornerRadius="5">
+            <ListBox x:Name="ConnectedCameras"
+                     Background="Transparent"
+                     BorderBrush="Transparent"
+                     ItemsSource="{Binding SessionList}"
+                     SelectionMode="Single"
+                     PreviewMouseLeftButtonDown="ListBox_PreviewMouseLeftButtonDown"
+                     SelectedItem="{Binding SelectedCamera}">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                            <StackPanel x:Name="ItemContainer">
+                                <TextBlock Text="{Binding Endpoint}" 
+                                           Foreground="LightGray"
+                                           Background="Transparent"
+                                           Margin="10,5,5,0"/>
+                                <TextBlock Text="{Binding SessionName}" 
+                                           Foreground="LightGray"
+                                           Background="Transparent"
+                                           Margin="10,5,5,5"/>
+                            </StackPanel>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+                <ListBox.ItemContainerStyle>
+                    <Style TargetType="{x:Type ListBoxItem}" BasedOn="{StaticResource TagBrowserItem}">
+                        <Setter Property="Margin" Value="0 0 0 5"/>
+                        <Setter Property="Foreground" Value="LightGray"/>
+                    </Style>
+                </ListBox.ItemContainerStyle>
+
+            </ListBox>            
+        </Border>
+        <StackPanel Grid.Row="2" Grid.Column="2">
+            <Border Grid.ColumnSpan="2"
+                    Background="{StaticResource BlueSecondary}"
+                    CornerRadius="5"
+                    Margin="5,5,5,5"
+                    Width="{Binding Width, ElementName=TagBrowser}"
+                    Height="30"
+                    HorizontalAlignment="Left">
+                <TextBlock Foreground="LightGray" Text="Tag Browser"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
+                           TextAlignment="Center"/>
+                
+            </Border>
+            <Border CornerRadius="5"
+                Background="{StaticResource BlueSecondary}"
+                Width="{Binding Width, ElementName=TagBrowser}"
+                HorizontalAlignment="Left"
+                Margin="5,5,5,0">
+                <ListBox x:Name="TagBrowser"
+                     Background="Transparent"
+                     BorderBrush="Transparent"
+                     Width="320"
+                     Height="370"
+                     SelectionMode="Multiple"
+                     SelectiveScrollingGrid.SelectiveScrollingOrientation="Vertical"
+                     PreviewMouseLeftButtonDown="ListBox_PreviewMouseLeftButtonDown"
+                     ItemsSource="{Binding AllTags}"
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                     Style="{StaticResource CustomListBoxStyle}"
+                     SelectionChanged="TagBrowser_SelectionChanged">
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="{x:Type ListBoxItem}" BasedOn="{StaticResource TagBrowserItem}">
+                            <Setter Property="Height" Value="25"/>
+                            <Setter Property="Margin" Value="0,0,0,5"/>
+                            <Setter Property="Foreground" Value="LightGray"/>
+                            <Setter Property="core:ListBoxItemBehavior.HandleSelection" Value="True"/>
+                        </Style>
+                    </ListBox.ItemContainerStyle>
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <ContentPresenter Content="{Binding}"/>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </Border>
+        </StackPanel>
+        
+    </Grid>
+</UserControl>

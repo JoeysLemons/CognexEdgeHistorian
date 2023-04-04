@@ -1,0 +1,69 @@
+﻿<UserControl x:Class="CognexEdgeHistorian.MVVM.View.DebugView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:viewModel="clr-namespace:CognexEdgeHistorian.MVVM.ViewModel"
+             xmlns:local="clr-namespace:CognexEdgeHistorian.MVVM.View"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" Width="932">
+
+    <StackPanel Orientation="Vertical">
+        <Border
+                VerticalAlignment="Top"
+                Background="{StaticResource BlueSecondary}"
+                CornerRadius="10"
+                Margin="10">
+            <StackPanel Orientation="Horizontal"
+                        Width="auto" Height="50">
+                <TextBox Template="{StaticResource TextBox}"
+                         Width="200" Height="30"
+                         Margin="10"
+                         Background="{StaticResource Black}"
+                         Foreground="LightGray"
+                         Text="{Binding Endpoint}"/>
+                <TextBox x:Name="TagData" 
+                         Template="{StaticResource TextBox}" 
+                         Width="200" Height="30"
+                         Margin="10"
+                         Text="{Binding TagData}"
+                         Background="{StaticResource Black}"/>
+                
+                <Button x:Name="ConnectButton"
+                        Content="Connect"
+                        Style="{StaticResource Button}"
+                        Height="30" Width="75"
+                        Margin="10"
+                        Command="{Binding ConnectToCamera}"
+                        Background="{StaticResource Black}"
+                        Foreground="LightGray"/>
+                <Button x:Name="DisconnectButton"
+                        Content="Disconnect"
+                        Style="{StaticResource Button}"
+                        Height="30" Width="75"
+                        Margin="10"
+                        Command="{Binding DisconnectFromCamera}"
+                        Background="{StaticResource Black}"
+                        Foreground="LightGray"/>
+                <Button x:Name="ReadButton"
+                        Content="Read"
+                        Style="{StaticResource Button}"
+                        Height="30" Width="75"
+                        Margin="10"
+                        Command="{Binding ReadTagCommand}"
+                        Background="{StaticResource Black}"
+                        Foreground="LightGray"/>
+
+            </StackPanel>
+        </Border>
+        <Border Margin="10"
+                Background="{StaticResource BlueSecondary}"
+                CornerRadius="10">
+            <StackPanel Orientation="Horizontal"
+                        Width="auto" Height="350">
+                
+            </StackPanel>
+        </Border>
+    </StackPanel>
+        
+</UserControl>
