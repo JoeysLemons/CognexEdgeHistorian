@@ -21,11 +21,26 @@
                 Margin="5">
             <StackPanel Orientation="Horizontal">
                 <RadioButton Style="{StaticResource TopRibbonItem}"
-                             Width="100" Height="30"
+                             Width="100" Height="40"
+                             Margin="10 0 0 0"
                              Background="{StaticResource Black}"
                              Content="Data Bindings"/>
+                <RadioButton Style="{StaticResource TopRibbonItem}"
+                             Width="100" Height="40"
+                             Margin="10 0 0 0"
+                             Background="{StaticResource Black}"
+                             Content="Filters"/>
+                <RadioButton Style="{StaticResource TopRibbonItem}"
+                             Width="100" Height="40"
+                             Margin="10 0 0 0"
+                             Background="{StaticResource Black}"
+                             Content="Saved Profiles"/>
+                <RadioButton Style="{StaticResource TopRibbonItem}"
+                             Width="100" Height="40"
+                             Margin="10 0 0 0"
+                             Background="{StaticResource Black}"
+                             Content="Settings"/>
             </StackPanel>
-            
         </Border>
         <Border Grid.Row="2" Grid.ColumnSpan="3" 
                 x:Name="BottomBorder"
@@ -39,14 +54,12 @@
                 Background="{StaticResource Black}"
                 CornerRadius="5"
                 Margin="10">
-
         </Border>
         <Border Grid.Row="2"
                 VerticalAlignment="Stretch"
                 Margin="10 55 10 10"
                 Background="{StaticResource Black}"
                 CornerRadius="5">
-            
         </Border>
         
     </Grid>

@@ -23,8 +23,13 @@ namespace CognexEdgeHistorian.MVVM.ViewModel
     {
         public ICommand ConnectToCamera { get; }
         public ICommand DisconnectFromCamera { get; }
-        private static CognexSession _selectedCamera;
 
+
+        /// <summary>
+        /// Holds the value of the currently selected camera in the connection pane. The ItemSelected property of the listbox
+        /// is bound to this property in the view
+        /// </summary>
+        private static CognexSession _selectedCamera;
         public CognexSession SelectedCamera
         {
             get { return _selectedCamera; }
@@ -39,7 +44,10 @@ namespace CognexEdgeHistorian.MVVM.ViewModel
             return _selectedCamera;
         }
 
-        private static List<string> _allTags;
+        /// <summary>
+        /// Contians a list of all the tags available in the currently selected camera
+        /// </summary>
+        private List<string> _allTags;
         public List<string> AllTags
         {
             get { return _allTags; }
@@ -51,7 +59,6 @@ namespace CognexEdgeHistorian.MVVM.ViewModel
         }
 
         private static Dictionary<string, List<string>> _selectedTags;
-
         public static Dictionary<string, List<string>> SelectedTags
         {
             get { return _selectedTags; }
@@ -61,16 +68,9 @@ namespace CognexEdgeHistorian.MVVM.ViewModel
             }
         }
 
-
-        //private static ObservableCollection<string> _selectedTags;
-        //public static ObservableCollection<string> SelectedTags
-        //{
-        //    get { return _selectedTags; }
-        //    set 
-        //    {
-        //        _selectedTags = value; 
-        //    }
-        //}
+        /// <summary>
+        /// List of all the open OPC UA sessions
+        /// </summary>
         public static ObservableCollection<CognexSession> SessionList { get; set; }
         public static void AddSelectedTag(string deviceName, string tagName)
         {

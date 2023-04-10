@@ -10,6 +10,8 @@ namespace CognexEdgeHistorian.MVVM.ViewModel
     {
         public DebugViewModel DebugVM { get; set; }
         public ConnectionsViewModel ConnectionsVM { get; set; }
+
+        public DataHistorianViewModel DataHistorianVM { get; set; }
         private object _currentView;
 
         public object CurrentView
@@ -24,8 +26,8 @@ namespace CognexEdgeHistorian.MVVM.ViewModel
 
         public MainViewModel()
         {
-            ConnectionsVM = new ConnectionsViewModel();
-            CurrentView = ConnectionsVM;
+            DataHistorianVM = new DataHistorianViewModel();
+            CurrentView = DataHistorianVM;
         }
     }
 }

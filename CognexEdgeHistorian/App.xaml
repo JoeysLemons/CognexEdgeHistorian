@@ -25,7 +25,7 @@
                 <view:ConnectionsView/>
             </DataTemplate>
             <DataTemplate DataType="{x:Type viewModel:DataHistorianViewModel}">
-                <view:ConnectionsView/>
+                <view:DataHistorianView/>
             </DataTemplate>
         </ResourceDictionary>
     </Application.Resources>

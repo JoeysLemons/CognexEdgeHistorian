@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Configuration;
 using System.Data;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
@@ -18,10 +19,18 @@ namespace CognexEdgeHistorian
     {
         private void App_OnExit(object sender, EventArgs e)
         {
-            foreach(var session in ConnectionsViewModel.SessionList)
+            try
             {
-                session.Session.Close();
+                foreach (var session in ConnectionsViewModel.SessionList)
+                {
+                    session?.Session.Close();
+                }
             }
+            catch(Exception ex)
+            {
+                Trace.WriteLine(ex.Message);
+            }
+            
         }
     }
 
