@@ -23,7 +23,7 @@ namespace CognexEdgeHistorian.MVVM.ViewModel
     {
         public ICommand ConnectToCamera { get; }
         public ICommand DisconnectFromCamera { get; }
-        private CognexSession _selectedCamera;
+        private static CognexSession _selectedCamera;
 
         public CognexSession SelectedCamera
         {
@@ -34,8 +34,12 @@ namespace CognexEdgeHistorian.MVVM.ViewModel
                 UpdateTagBrowser();
             }
         }
+        public static CognexSession GetSelectedCamera()
+        {
+            return _selectedCamera;
+        }
 
-        private List<string> _allTags;
+        private static List<string> _allTags;
         public List<string> AllTags
         {
             get { return _allTags; }
@@ -45,8 +49,10 @@ namespace CognexEdgeHistorian.MVVM.ViewModel
                 OnPropertyChanged(nameof(AllTags));
             }
         }
-        private static ObservableCollection<string> _selectedTags;
-        public static ObservableCollection<string> SelectedTags
+
+        private static Dictionary<string, List<string>> _selectedTags;
+
+        public static Dictionary<string, List<string>> SelectedTags
         {
             get { return _selectedTags; }
             set 
@@ -54,19 +60,41 @@ namespace CognexEdgeHistorian.MVVM.ViewModel
                 _selectedTags = value; 
             }
         }
+
+
+        //private static ObservableCollection<string> _selectedTags;
+        //public static ObservableCollection<string> SelectedTags
+        //{
+        //    get { return _selectedTags; }
+        //    set 
+        //    {
+        //        _selectedTags = value; 
+        //    }
+        //}
         public static ObservableCollection<CognexSession> SessionList { get; set; }
-        public static void AddSelectedTag(string tagName)
+        public static void AddSelectedTag(string deviceName, string tagName)
         {
-            SelectedTags.Add(tagName);
+            SelectedTags.TryGetValue(deviceName, out List<string> tags);
+            tags?.Add(tagName);
+            if(tags == null)
+            {
+                SelectedTags.Add(deviceName, new List<string>());
+                SelectedTags.TryGetValue(deviceName, out tags);
+                tags.Add(tagName);
+            }
         }
-        public static void RemoveSelectedTag(string tagName)
+        public static void RemoveSelectedTag(string deviceName, string tagName)
         {
-            SelectedTags.Remove(tagName);
+            SelectedTags.TryGetValue(deviceName, out List<string> tags);
+            tags.Remove(tagName);
         }
 
         public void Disconnect(object parameter)
         {
             CognexSession result = SessionList.FirstOrDefault(s => s.Endpoint == (string)parameter);
+            SelectedTags.Remove(SelectedCamera.Endpoint);
+            SessionList.Remove(result);
+            ClearTagBrowser();
             result.Session?.Dispose();
         }
         public async void Connect(object parameter)
@@ -130,13 +158,28 @@ namespace CognexEdgeHistorian.MVVM.ViewModel
 
         public async void UpdateTagBrowser()
         {
-            AllTags = await BrowseChildren(SelectedCamera.Session, SelectedCamera.References);
+            try
+            {
+                AllTags = await BrowseChildren(SelectedCamera.Session, SelectedCamera.References);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to browse tags{ex.Message}");
+            }
         }
+        public void ClearTagBrowser()
+        {
+            AllTags.Clear();
+            OnPropertyChanged(nameof(AllTags));
+            var allTagsViewSource = CollectionViewSource.GetDefaultView(AllTags);
+            allTagsViewSource.Refresh();
+        }
+            
         public ConnectionsViewModel()
         {
             ConnectToCamera = new RelayCommand(Connect);
             DisconnectFromCamera = new RelayCommand(Disconnect);
-            SelectedTags = new ObservableCollection<string>();
+            SelectedTags = new Dictionary<string, List<string>>();
             SessionList = new ObservableCollection<CognexSession>();
         }
     }

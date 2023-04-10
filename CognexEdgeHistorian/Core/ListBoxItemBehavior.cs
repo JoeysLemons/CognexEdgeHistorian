@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Windows.Controls;
 using System.Windows;
 using CognexEdgeHistorian.MVVM.ViewModel;
+using System.Diagnostics;
 
 namespace CognexEdgeHistorian.Core
 {
@@ -48,19 +49,27 @@ namespace CognexEdgeHistorian.Core
             if (item != null)
             {
                 string content = (string)item.Content;
-                ConnectionsViewModel.AddSelectedTag(content);
+                ConnectionsViewModel.AddSelectedTag(ConnectionsViewModel.GetSelectedCamera().Endpoint, content);
                 Console.WriteLine($"Item selected: {content}");
             }
         }
 
         private static void OnItemUnselected(object sender, RoutedEventArgs e)
         {
-            ListBoxItem item = sender as ListBoxItem;
-            if (item != null)
+            try
             {
-                string content = (string)item.Content;
-                ConnectionsViewModel.RemoveSelectedTag(content);
-                Console.WriteLine($"Item unselected: {content}");
+                ListBoxItem item = sender as ListBoxItem;
+                if (item != null)
+                {
+                    string content = (string)item.Content;
+                    ConnectionsViewModel.RemoveSelectedTag(ConnectionsViewModel.GetSelectedCamera().Endpoint, content);
+                    Console.WriteLine($"Item unselected: {content}");
+                }
+            }
+            catch(Exception ex)
+            {
+                Trace.WriteLine("Failed to csat listbox item as a string ");
+                Trace.WriteLine(ex.Message);
             }
         }
     }

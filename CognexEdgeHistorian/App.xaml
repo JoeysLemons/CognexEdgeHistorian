@@ -15,11 +15,16 @@
                 <ResourceDictionary Source="Themes/TagBrowserItem.xaml"/>
                 <ResourceDictionary Source="Themes/InvisibleToggleButton.xaml"/>
                 <ResourceDictionary Source="Themes/ScrollBarStyle.xaml"/>
+                <ResourceDictionary Source="Themes/DevicePaneItem.xaml"/>
+                <ResourceDictionary Source="Themes/TopRibbonItems.xaml"/>
             </ResourceDictionary.MergedDictionaries>
             <DataTemplate DataType="{x:Type viewModel:DebugViewModel}">
                 <view:DebugView/>
             </DataTemplate>
             <DataTemplate DataType="{x:Type viewModel:ConnectionsViewModel}">
+                <view:ConnectionsView/>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type viewModel:DataHistorianViewModel}">
                 <view:ConnectionsView/>
             </DataTemplate>
         </ResourceDictionary>

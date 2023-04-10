@@ -86,7 +86,7 @@
                     </DataTemplate>
                 </ListBox.ItemTemplate>
                 <ListBox.ItemContainerStyle>
-                    <Style TargetType="{x:Type ListBoxItem}" BasedOn="{StaticResource TagBrowserItem}">
+                    <Style TargetType="{x:Type ListBoxItem}" BasedOn="{StaticResource DevicePaneItem}">
                         <Setter Property="Margin" Value="0 0 0 5"/>
                         <Setter Property="Foreground" Value="LightGray"/>
                     </Style>

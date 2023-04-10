@@ -13,6 +13,7 @@ namespace CognexEdgeHistorian.MVVM.Model
         public Session Session { get; }
         public string Endpoint { get; }
         public string SessionName { get; }
+        public List<string> Tags { get; } = new List<string>();
         public ReferenceDescriptionCollection References { get; set; }
 
         public CognexSession(Session session, string endpoint, string sessionName, ReferenceDescriptionCollection references)

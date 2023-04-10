@@ -221,6 +221,10 @@
     <Compile Include="Core\ListBoxItemBehavior.cs" />
     <Compile Include="MVVM\Model\CognexSession.cs" />
     <Compile Include="MVVM\ViewModel\ConnectionsViewModel.cs" />
+    <Compile Include="MVVM\ViewModel\DataHistorianViewModel.cs" />
+    <Compile Include="MVVM\View\DataHistorianView.xaml.cs">
+      <DependentUpon>DataHistorianView.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Themes\CameraInfoBox.xaml.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
@@ -241,6 +245,10 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="MVVM\View\DataHistorianView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="MVVM\View\DebugView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -252,6 +260,10 @@
     <Page Include="Themes\ColorScheme.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Themes\DevicePaneItem.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Themes\InvisibleToggleButton.xaml">
       <Generator>MSBuild:Compile</Generator>
@@ -268,6 +280,10 @@
     <Page Include="Themes\TextBox.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Themes\TopRibbonItems.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>
   <ItemGroup>
