@@ -164,7 +164,7 @@ namespace CognexEdgeHistorian.MVVM.ViewModel
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Failed to browse tags{ex.Message}");
+                Console.WriteLine($"Failed to browse tags: {ex.Message}");
             }
         }
         public void ClearTagBrowser()
