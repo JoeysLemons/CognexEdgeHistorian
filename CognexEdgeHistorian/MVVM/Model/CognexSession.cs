@@ -15,6 +15,7 @@ namespace CognexEdgeHistorian.MVVM.Model
         public string SessionName { get; }
         public List<string> Tags { get; } = new List<string>();
         public ReferenceDescriptionCollection References { get; set; }
+        public Subscription Subscription { get; set; }
 
         public CognexSession(Session session, string endpoint, string sessionName, ReferenceDescriptionCollection references)
         {

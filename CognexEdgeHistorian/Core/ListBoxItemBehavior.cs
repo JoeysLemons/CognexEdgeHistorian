@@ -70,7 +70,7 @@ namespace CognexEdgeHistorian.Core
                 if (item != null)
                 {
                     string content = (string)item.Content;
-                    ConnectionsViewModel.RemoveSelectedTag(ConnectionsViewModel.GetSelectedCamera().Endpoint, content);
+                    ConnectionsViewModel.RemoveSelectedTag(ConnectionsViewModel.GetSelectedCamera(), content);
                     Console.WriteLine($"Item unselected: {content}");
                 }
             }

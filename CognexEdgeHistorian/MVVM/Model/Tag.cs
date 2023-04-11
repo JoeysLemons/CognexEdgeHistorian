@@ -17,7 +17,7 @@ namespace CognexEdgeHistorian.MVVM.Models
 		public string Location { get; set; }
 		public List<string> Filters { get; set; }
 		public object AssociatedImage { get; set; }
-		public int ID { get; set; }
+		public string NodeId { get; set; }
 		private string _browseName;
 
 		public string BrowseName
@@ -31,9 +31,10 @@ namespace CognexEdgeHistorian.MVVM.Models
 		}
 
 
-		protected Tag(string name)
+		protected Tag(string name, string id)
 		{
 			Name = name;
+			NodeId = id;
 		}
 
 	}

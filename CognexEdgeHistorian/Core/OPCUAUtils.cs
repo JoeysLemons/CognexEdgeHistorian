@@ -119,7 +119,7 @@ namespace CognexEdgeHistorian.Core
             return session;
         }
 
-        public static Subscription CreateSubscriptionAndAddMonitoredItems(Session session, List<string> tagNodeIds, MonitoredItemNotificationEventHandler callback)
+        public static Subscription CreateSubscription(Session session)
         {
             // Create a subscription
             Subscription subscription = new Subscription(session.DefaultSubscription)
@@ -128,32 +128,55 @@ namespace CognexEdgeHistorian.Core
                 PublishingEnabled = true
             };
 
-            // Add the monitored items for the tags
-            foreach (string nodeId in tagNodeIds)
-            {
-                MonitoredItem monitoredItem = new MonitoredItem(subscription.DefaultItem)
-                {
-                    DisplayName = nodeId,
-                    StartNodeId = new NodeId(nodeId),
-                    AttributeId = Attributes.Value,
-                    MonitoringMode = MonitoringMode.Reporting,
-                    SamplingInterval = 1000, // Set the desired sampling interval (in milliseconds)
-                    QueueSize = 1,
-                    DiscardOldest = true
-                };
-
-                // Set the callback for value changes
-                monitoredItem.Notification += callback;
-
-                // Add the monitored item to the subscription
-                subscription.AddItem(monitoredItem);
-            }
-
             // Add the subscription to the session and apply the changes
             session.AddSubscription(subscription);
             subscription.Create();
 
             return subscription;
+        }
+
+        public static void AddMonitoredItem(Subscription subscription, string nodeId, MonitoredItemNotificationEventHandler callback)
+        {
+            MonitoredItem monitoredItem = new MonitoredItem(subscription.DefaultItem)
+            {
+                DisplayName = nodeId,
+                StartNodeId = new NodeId(nodeId),
+                AttributeId = Attributes.Value,
+                MonitoringMode = MonitoringMode.Reporting,
+                SamplingInterval = 1000, // Set the desired sampling interval (in milliseconds)
+                QueueSize = 1,
+                DiscardOldest = true
+            };
+
+            // Set the callback for value changes
+            monitoredItem.Notification += callback;
+
+            // Add the monitored item to the subscription
+            subscription.AddItem(monitoredItem);
+
+            // Apply the changes on the server
+            subscription.ApplyChanges();
+        }
+
+        public static void RemoveMonitoredItem(Subscription subscription, string nodeId)
+        {
+            MonitoredItem monitoredItem = subscription.MonitoredItems.FirstOrDefault(item => item.StartNodeId.ToString() == nodeId);
+
+            if (monitoredItem != null)
+            {
+                // Remove the callback
+                monitoredItem.Notification -= OnTagValueChanged;
+
+                // Remove the monitored item from the subscription
+                subscription.RemoveItem(monitoredItem);
+
+                // Apply the changes on the server
+                subscription.ApplyChanges();
+            }
+            else
+            {
+                Console.WriteLine($"Node with ID '{nodeId}' not found in the subscription.");
+            }
         }
 
         public static void OnTagValueChanged(MonitoredItem monitoredItem, MonitoredItemNotificationEventArgs e)

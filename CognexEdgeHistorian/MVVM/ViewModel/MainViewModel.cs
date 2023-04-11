@@ -26,8 +26,8 @@ namespace CognexEdgeHistorian.MVVM.ViewModel
 
         public MainViewModel()
         {
-            DataHistorianVM = new DataHistorianViewModel();
-            CurrentView = DataHistorianVM;
+            ConnectionsVM = new ConnectionsViewModel();
+            CurrentView = ConnectionsVM;
         }
     }
 }

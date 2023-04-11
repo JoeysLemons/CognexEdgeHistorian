@@ -46,8 +46,8 @@ namespace CognexEdgeHistorian.MVVM.ViewModel
         /// <summary>
         /// Contians a list of all the tags available in the currently selected camera
         /// </summary>
-        private List<string> _allTags;
-        public List<string> AllTags
+        private List<(string DisplayName, string NodeId)> _allTags;
+        public List<(string DisplayName, string NodeId)> AllTags
         {
             get { return _allTags; }
             set
@@ -56,6 +56,16 @@ namespace CognexEdgeHistorian.MVVM.ViewModel
                 OnPropertyChanged(nameof(AllTags));
             }
         }
+        private List<string> _displayNames;
+
+        public List<string> DisplayNames
+        {
+            get { return _displayNames; }
+            set {
+                    _displayNames = value; 
+                }
+        }
+
 
         private static Dictionary<string, List<string>> _selectedTags;
         public static Dictionary<string, List<string>> SelectedTags
@@ -74,35 +84,20 @@ namespace CognexEdgeHistorian.MVVM.ViewModel
         public static void AddSelectedTag(CognexSession session, string tagName)
         {
             session.Tags.Add(tagName);
+            OPCUAUtils.AddMonitoredItem(session.Subscription, tagName, OPCUAUtils.OnTagValueChanged);
         }
         
-        //public static void AddSelectedTag(string deviceName, string tagName)
-        //{
-        //    SelectedTags.TryGetValue(deviceName, out List<string> tags);
-        //    tags?.Add(tagName);
-        //    if(tags == null)
-        //    {
-        //        SelectedTags.Add(deviceName, new List<string>());
-        //        SelectedTags.TryGetValue(deviceName, out tags);
-        //        tags.Add(tagName);
-        //    }
-        //}
-        //public static void RemoveSelectedTag(string deviceName, string tagName)
-        //{
-        //    SelectedTags.TryGetValue(deviceName, out List<string> tags);
-        //    tags.Remove(tagName);
-        //}
-
         public static void RemoveSelectedTag(CognexSession session, string tagName)
         {
             session.Tags.Remove(tagName);
+            OPCUAUtils.RemoveMonitoredItem(session.Subscription, tagName);
         }
-
 
         public void Disconnect(object parameter)
         {
             CognexSession result = SessionList.FirstOrDefault(s => s.Endpoint == (string)parameter);
             result.Tags.Clear();
+            //SelectedTags.Remove(SelectedCamera.Endpoint);  Depending on whether I can store the Selected Tag list in the cognex session this line will be removed
             SessionList.Remove(result);
             ClearTagBrowser();
             result.Session?.Dispose();
@@ -130,15 +125,18 @@ namespace CognexEdgeHistorian.MVVM.ViewModel
                 out continuationPoint,
                 out references);
 
-                SessionList.Add(new CognexSession(session, endpoint, session.SessionName, references));
+            CognexSession cognexSession = new CognexSession(session, endpoint, session.SessionName, references);
+            cognexSession.Subscription = OPCUAUtils.CreateSubscription(session);
+            SessionList.Add(cognexSession);
         }
-        private static async Task<List<string>> BrowseChildren(Session session, ReferenceDescriptionCollection references)
+        private static async Task<List<(string DisplayName, string NodeId)>> BrowseChildren(Session session, ReferenceDescriptionCollection references)
         {
-            List<string> displayNames = new List<string>();
+            List<(string DisplayName, string NodeId)> nodes = new List<(string DisplayName, string NodeId)>();
             foreach (var reference in references)
             {
                 string displayName = reference.DisplayName.ToString();
-                displayNames.Add(displayName);
+                string nodeId = reference.NodeId.ToString();
+                nodes.Add((displayName, nodeId));
                 Console.WriteLine($"DisplayName: {displayName}, NodeId: {reference.NodeId}");
 
                 ReferenceDescriptionCollection childReferences;
@@ -158,19 +156,20 @@ namespace CognexEdgeHistorian.MVVM.ViewModel
 
                 if (childReferences.Count > 0)
                 {
-                    List<string> childDisplayNames = await BrowseChildren(session, childReferences);
-                    displayNames.AddRange(childDisplayNames);
+                    List<(string DisplayName, string NodeId)> childNodes = await BrowseChildren(session, childReferences);
+                    nodes.AddRange(childNodes);
                 }
             }
 
-            return displayNames;
+            return nodes;
         }
 
         public async void UpdateTagBrowser()
         {
             try
             {
-                AllTags = await BrowseChildren(SelectedCamera.Session, SelectedCamera.References);
+                if(SelectedCamera != null)
+                    AllTags = await BrowseChildren(SelectedCamera.Session, SelectedCamera.References);
             }
             catch (Exception ex)
             {
