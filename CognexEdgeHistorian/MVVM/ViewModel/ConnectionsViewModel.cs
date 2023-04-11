@@ -14,7 +14,6 @@ using System.Collections.ObjectModel;
 using CognexEdgeHistorian.MVVM.Model;
 using Opc.Ua.Server;
 using System.Net;
-using Org.BouncyCastle.Crypto.Digests;
 using Session = Opc.Ua.Client.Session;
 
 namespace CognexEdgeHistorian.MVVM.ViewModel
@@ -72,27 +71,38 @@ namespace CognexEdgeHistorian.MVVM.ViewModel
         /// List of all the open OPC UA sessions
         /// </summary>
         public static ObservableCollection<CognexSession> SessionList { get; set; }
-        public static void AddSelectedTag(string deviceName, string tagName)
+        public static void AddSelectedTag(CognexSession session, string tagName)
         {
-            SelectedTags.TryGetValue(deviceName, out List<string> tags);
-            tags?.Add(tagName);
-            if(tags == null)
-            {
-                SelectedTags.Add(deviceName, new List<string>());
-                SelectedTags.TryGetValue(deviceName, out tags);
-                tags.Add(tagName);
-            }
+            session.Tags.Add(tagName);
         }
-        public static void RemoveSelectedTag(string deviceName, string tagName)
+        
+        //public static void AddSelectedTag(string deviceName, string tagName)
+        //{
+        //    SelectedTags.TryGetValue(deviceName, out List<string> tags);
+        //    tags?.Add(tagName);
+        //    if(tags == null)
+        //    {
+        //        SelectedTags.Add(deviceName, new List<string>());
+        //        SelectedTags.TryGetValue(deviceName, out tags);
+        //        tags.Add(tagName);
+        //    }
+        //}
+        //public static void RemoveSelectedTag(string deviceName, string tagName)
+        //{
+        //    SelectedTags.TryGetValue(deviceName, out List<string> tags);
+        //    tags.Remove(tagName);
+        //}
+
+        public static void RemoveSelectedTag(CognexSession session, string tagName)
         {
-            SelectedTags.TryGetValue(deviceName, out List<string> tags);
-            tags.Remove(tagName);
+            session.Tags.Remove(tagName);
         }
+
 
         public void Disconnect(object parameter)
         {
             CognexSession result = SessionList.FirstOrDefault(s => s.Endpoint == (string)parameter);
-            SelectedTags.Remove(SelectedCamera.Endpoint);
+            result.Tags.Clear();
             SessionList.Remove(result);
             ClearTagBrowser();
             result.Session?.Dispose();

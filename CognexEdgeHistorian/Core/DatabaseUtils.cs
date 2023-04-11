@@ -30,7 +30,7 @@ namespace CognexEdgeHistorian.Core
                 CREATE TABLE IF NOT EXISTS cameras (
                     id INTEGER PRIMARY KEY,
                     camera_name TEXT,
-                    camera_details TEXT
+                    camera_endpoint TEXT
                 )"
             ;
 
@@ -64,6 +64,7 @@ namespace CognexEdgeHistorian.Core
                     tag_id INTEGER,
                     value TEXT,
                     timestamp TEXT,
+                    image BLOB,
                     FOREIGN KEY (tag_id) REFERENCES tags (id)
                 )";
 
@@ -75,7 +76,7 @@ namespace CognexEdgeHistorian.Core
 
         public void AddCamera(string cameraName, string endpoint)
         {
-            string insertCamera = "INSERT INTO cameras (camera_name, endpoint) VALUES (@cameraName, @endpoint)";
+            string insertCamera = "INSERT INTO cameras (camera_name, camera_endpoint) VALUES (@cameraName, @endpoint)";
             using (SQLiteCommand command = new SQLiteCommand(insertCamera, SqlConnection))
             {
                 command.Parameters.AddWithValue("@cameraName", cameraName);
@@ -129,7 +130,7 @@ namespace CognexEdgeHistorian.Core
             DataTable cameraTagInfo = new DataTable();
 
             string selectCameraInfo = @"
-                    SELECT cameras.id, cameras.camera_name, cameras.camera_details, tags.id, tags.tag_name
+                    SELECT cameras.id, cameras.camera_name, cameras.camera_endpoint, tags.id, tags.tag_name
                     FROM cameras
                     LEFT JOIN tags ON cameras.id = tags.camera_id";
             using (SQLiteCommand command = new SQLiteCommand(selectCameraInfo, SqlConnection))

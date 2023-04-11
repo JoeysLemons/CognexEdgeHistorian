@@ -45,12 +45,20 @@ namespace CognexEdgeHistorian.Core
 
         private static void OnItemSelected(object sender, RoutedEventArgs e)
         {
-            ListBoxItem item = sender as ListBoxItem;
-            if (item != null)
+            try
             {
-                string content = (string)item.Content;
-                ConnectionsViewModel.AddSelectedTag(ConnectionsViewModel.GetSelectedCamera().Endpoint, content);
-                Console.WriteLine($"Item selected: {content}");
+                ListBoxItem item = sender as ListBoxItem;
+                if (item != null)
+                {
+                    string content = (string)item.Content;
+                    ConnectionsViewModel.AddSelectedTag(ConnectionsViewModel.GetSelectedCamera(), content);
+                    Console.WriteLine($"Item selected: {content}");
+                }
+            }
+            catch(Exception ex)
+            {
+                Trace.WriteLine("Failed to csat listbox item as a string ");
+                Trace.WriteLine(ex.Message);
             }
         }
 
