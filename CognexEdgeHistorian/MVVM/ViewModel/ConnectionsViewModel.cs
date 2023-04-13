@@ -106,7 +106,6 @@ namespace CognexEdgeHistorian.MVVM.ViewModel
         {
             CognexSession result = SessionList.FirstOrDefault(s => s.Endpoint == (string)parameter);
             result.Tags.Clear();
-            //SelectedTags.Remove(SelectedCamera.Endpoint);  Depending on whether I can store the Selected Tag list in the cognex session this line will be removed
             SessionList.Remove(result);
             ClearTagBrowser();
             result.Session?.Dispose();

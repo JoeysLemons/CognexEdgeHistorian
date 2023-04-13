@@ -9,8 +9,9 @@
         mc:Ignorable="d"
         Title="MainWindow" 
         Height="600" Width="1200"
+        MinHeight="600" MinWidth="800"
         WindowStyle="None"
-        ResizeMode="CanResize"
+        ResizeMode="CanResizeWithGrip"
         Background="Transparent"
         AllowsTransparency="True">
     
