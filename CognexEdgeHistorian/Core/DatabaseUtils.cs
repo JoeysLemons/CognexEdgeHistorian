@@ -16,15 +16,19 @@ namespace CognexEdgeHistorian.Core
 {
     public class DatabaseUtils
     {
-        public SQLiteConnection SqlConnection { get; set; }
-        public string ConnectionString { get; set; }
+        public static SQLiteConnection SqlConnection { get; set; }
+        public static string ConnectionString { get; set; }
 
-        public void OpenSQLConnection()
+        public static void OpenSQLConnection()
         {
             SqlConnection = new SQLiteConnection(ConnectionString);
             SqlConnection.Open();
         }
-        public void CreateCamerasTable()
+        public static void CloseSQLConnection()
+        {
+            SqlConnection.Close();
+        }
+        public static void CreateCamerasTable()
         {
             string createCamerasTable = @"
                 CREATE TABLE IF NOT EXISTS cameras (
@@ -40,7 +44,7 @@ namespace CognexEdgeHistorian.Core
             }
         }
 
-        public void CreateTagsTable()
+        public static void CreateTagsTable()
         {
             string createTagsTable = @"
                 CREATE TABLE IF NOT EXISTS tags (
@@ -56,7 +60,7 @@ namespace CognexEdgeHistorian.Core
             }
         }
 
-        public void CreateTagValuesTable()
+        public static void CreateTagValuesTable()
         {
             string createTagValuesTable = @"
                 CREATE TABLE IF NOT EXISTS tag_values (
@@ -74,7 +78,7 @@ namespace CognexEdgeHistorian.Core
             }
         }
 
-        public void AddCamera(string cameraName, string endpoint)
+        public static void AddCamera(string cameraName, string endpoint)
         {
             string insertCamera = "INSERT INTO cameras (camera_name, camera_endpoint) VALUES (@cameraName, @endpoint)";
             using (SQLiteCommand command = new SQLiteCommand(insertCamera, SqlConnection))
@@ -85,7 +89,7 @@ namespace CognexEdgeHistorian.Core
             }
         }
 
-        public void AddTag(int cameraId, string tagName)
+        public static void AddTag(int cameraId, string tagName)
         {
             string insertTag = "INSERT INTO tags (camera_id, tag_name) VALUES (@cameraId, @tagName)";
             using (SQLiteCommand command = new SQLiteCommand(insertTag, SqlConnection))
@@ -96,7 +100,7 @@ namespace CognexEdgeHistorian.Core
             }
         }
 
-        public void StoreTagValue(int tagId, string value, string timestamp)    //! Need to add support for storing an image as a blob later on down the line
+        public static void StoreTagValue(int tagId, string value, string timestamp)    //! Need to add support for storing an image as a blob later on down the line
         {
             string insertTagValue = "INSERT INTO tag_values (tag_id, value, timestamp) VALUES (@tagId, @value, @timestamp)";
             using (SQLiteCommand command = new SQLiteCommand(insertTagValue, SqlConnection))
@@ -107,8 +111,24 @@ namespace CognexEdgeHistorian.Core
                 command.ExecuteNonQuery();
             }
         }
+        public static DataTable GetCameraByEndpoint(string endpoint)
+        {
+            DataTable camera = new DataTable();
 
-        public DataTable GetTagValues(int tagId)
+            string selectCameraByEndpoint = "SELECT * FROM cameras WHERE camera_endpoint = @endpoint";
+            using (SQLiteCommand command = new SQLiteCommand(selectCameraByEndpoint, SqlConnection))
+            {
+                command.Parameters.AddWithValue("@endpoint", endpoint);
+                using (SQLiteDataAdapter adapter = new SQLiteDataAdapter(command))
+                {
+                    adapter.Fill(camera);
+                }
+            }
+
+            return camera;
+        }
+
+        public static DataTable GetTagValues(int tagId)
         {
             DataTable values = new DataTable();
 
@@ -125,7 +145,7 @@ namespace CognexEdgeHistorian.Core
             return values;
         }
 
-        public DataTable GetCamerasAndTags()
+        public static DataTable GetCamerasAndTags()
         {
             DataTable cameraTagInfo = new DataTable();
 

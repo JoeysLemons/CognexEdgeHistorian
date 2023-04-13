@@ -16,6 +16,7 @@ using Opc.Ua.Server;
 using System.Net;
 using Session = Opc.Ua.Client.Session;
 using CognexEdgeHistorian.MVVM.Models;
+using System.Data;
 
 namespace CognexEdgeHistorian.MVVM.ViewModel
 {
@@ -23,7 +24,6 @@ namespace CognexEdgeHistorian.MVVM.ViewModel
     {
         public ICommand ConnectToCamera { get; }
         public ICommand DisconnectFromCamera { get; }
-
 
         /// <summary>
         /// Holds the value of the currently selected camera in the connection pane. The ItemSelected property of the listbox
@@ -89,6 +89,8 @@ namespace CognexEdgeHistorian.MVVM.ViewModel
         {
             session.Tags.Add(tag.Name);
             OPCUAUtils.AddMonitoredItem(session.Subscription, tag.NodeId, OPCUAUtils.OnTagValueChanged);
+            DataTable camera = DatabaseUtils.GetCameraByEndpoint(GetSelectedCamera().Endpoint);
+            DatabaseUtils.AddTag(Int32.Parse(camera.Rows[0]["id"].ToString()), tag.Name);
         }
         
         public static void RemoveSelectedTag(CognexSession session, Tag tag)
@@ -132,6 +134,7 @@ namespace CognexEdgeHistorian.MVVM.ViewModel
             CognexSession cognexSession = new CognexSession(session, endpoint, session.SessionName, references);
             cognexSession.Subscription = OPCUAUtils.CreateSubscription(session);
             SessionList.Add(cognexSession);
+            DatabaseUtils.AddCamera(session.SessionName, endpoint);
         }
         private static async Task<List<Tag>> BrowseChildren(Session session, ReferenceDescriptionCollection references)
         {
@@ -140,7 +143,7 @@ namespace CognexEdgeHistorian.MVVM.ViewModel
             {
                 string displayName = reference.DisplayName.ToString();
                 string nodeId = reference.NodeId.ToString();
-                nodes.Add(new Tag(displayName, nodeId));
+                nodes.Add(new Tag(displayName, nodeId, session.SessionName));
                 Console.WriteLine($"DisplayName: {displayName}, NodeId: {reference.NodeId}");
 
                 ReferenceDescriptionCollection childReferences;

@@ -1,4 +1,5 @@
-﻿using CognexEdgeHistorian.MVVM.Model;
+﻿using CognexEdgeHistorian.Core;
+using CognexEdgeHistorian.MVVM.Model;
 using CognexEdgeHistorian.MVVM.ViewModel;
 using System;
 using System.Collections.Generic;
@@ -21,6 +22,7 @@ namespace CognexEdgeHistorian
         {
             try
             {
+                DatabaseUtils.CloseSQLConnection();
                 foreach (var session in ConnectionsViewModel.SessionList)
                 {
                     session?.Session.Close();
@@ -31,6 +33,12 @@ namespace CognexEdgeHistorian
                 Trace.WriteLine(ex.Message);
             }
             
+        }
+
+        private void OnStartup(object sender, EventArgs e)
+        {
+            DatabaseUtils.ConnectionString = "Data Source=C:\\Programming\\CognexEdgeDatabase\\CognexEdgeHistorianTestDB.db;Version=3;";
+            DatabaseUtils.OpenSQLConnection();
         }
     }
 

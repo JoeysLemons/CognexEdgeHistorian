@@ -187,9 +187,15 @@ namespace CognexEdgeHistorian.Core
             DataValue value = notification.Value;
             Console.WriteLine($"Tag: {monitoredItem.DisplayName}, Value: {value.Value}, Timestamp: {value.SourceTimestamp}");
 
-            //!Write to daatbase here
+            DatabaseUtils.StoreTagValue(ConvertNodeIdToInteger(monitoredItem.DisplayName), value.Value.ToString(), value.SourceTimestamp.ToString());
         }
 
+        private static int ConvertNodeIdToInteger(string nodeId)
+        {
+            int nodeIdInteger = Int32.Parse(nodeId.Substring(2));
+            Console.WriteLine(nodeIdInteger);
+            return nodeIdInteger;
+        }
 
     }
 }
