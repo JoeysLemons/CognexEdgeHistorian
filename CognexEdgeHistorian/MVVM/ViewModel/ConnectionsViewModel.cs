@@ -197,7 +197,7 @@ namespace CognexEdgeHistorian.MVVM.ViewModel
         {
             ConnectToCamera = new RelayCommand(Connect);
             DisconnectFromCamera = new RelayCommand(Disconnect);
-            NavigateDataHistorianCommand = new NavigateDataHistorianCommand(navigationStore);
+            NavigateDataHistorianCommand = new NavigateCommand<DataHistorianViewModel>(navigationStore, () => new DataHistorianViewModel(navigationStore));
             SelectedTags = new Dictionary<string, List<string>>();
             SessionList = new ObservableCollection<CognexSession>();
         }

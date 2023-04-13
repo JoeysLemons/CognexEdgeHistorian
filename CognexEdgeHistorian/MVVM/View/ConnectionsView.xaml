@@ -58,6 +58,13 @@
                         Foreground="LightGray"
                         Command="{Binding DisconnectFromCamera}"
                         CommandParameter="{Binding ElementName=ConnectedCameras, Path=SelectedItem.Endpoint}"/>
+                <Button Width="100" Height="30"
+                        Margin="5 22 0 0"
+                        Style="{StaticResource Button}"
+                        Background="{StaticResource Black}"
+                        Content="Data Historian"
+                        Foreground="LightGray"
+                        Command="{Binding NavigateDataHistorianCommand}"/>
             </StackPanel>
         </Border>
         <Border Grid.Row="2"

@@ -238,7 +238,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="Commands\NavigateDataHistorianCommand.cs" />
+    <Compile Include="Commands\NavigateCommand.cs" />
     <Compile Include="Core\DatabaseUtils.cs" />
     <Compile Include="Core\ListBoxItemBehavior.cs" />
     <Compile Include="MVVM\Model\CognexSession.cs" />
