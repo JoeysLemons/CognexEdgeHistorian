@@ -121,7 +121,7 @@
                      SelectionMode="Multiple"
                      SelectiveScrollingGrid.SelectiveScrollingOrientation="Vertical"
                      PreviewMouseLeftButtonDown="ListBox_PreviewMouseLeftButtonDown"
-                     ItemsSource="{Binding AllTags.DisplayName}"
+                     ItemsSource="{Binding AllTags}"
                      ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                      Style="{StaticResource CustomListBoxStyle}"
                      SelectionChanged="TagBrowser_SelectionChanged">
@@ -135,7 +135,7 @@
                     </ListBox.ItemContainerStyle>
                     <ListBox.ItemTemplate>
                         <DataTemplate>
-                            <ContentPresenter Content="{Binding}"/>
+                            <ContentPresenter Content="{Binding Name}"/>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>

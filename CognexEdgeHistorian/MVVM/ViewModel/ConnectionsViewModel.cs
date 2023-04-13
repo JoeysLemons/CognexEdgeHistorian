@@ -15,6 +15,7 @@ using CognexEdgeHistorian.MVVM.Model;
 using Opc.Ua.Server;
 using System.Net;
 using Session = Opc.Ua.Client.Session;
+using CognexEdgeHistorian.MVVM.Models;
 
 namespace CognexEdgeHistorian.MVVM.ViewModel
 {
@@ -46,8 +47,8 @@ namespace CognexEdgeHistorian.MVVM.ViewModel
         /// <summary>
         /// Contians a list of all the tags available in the currently selected camera
         /// </summary>
-        private List<(string DisplayName, string NodeId)> _allTags;
-        public List<(string DisplayName, string NodeId)> AllTags
+        private static List<Tag> _allTags;
+        public List<Tag> AllTags
         {
             get { return _allTags; }
             set
@@ -76,21 +77,24 @@ namespace CognexEdgeHistorian.MVVM.ViewModel
                 _selectedTags = value; 
             }
         }
-
+        public static Tag GetTagByDisplayName(string displayName)
+        {
+            return _allTags.FirstOrDefault(tag => tag.Name == displayName);
+        }
         /// <summary>
         /// List of all the open OPC UA sessions
         /// </summary>
         public static ObservableCollection<CognexSession> SessionList { get; set; }
-        public static void AddSelectedTag(CognexSession session, string tagName)
+        public static void AddSelectedTag(CognexSession session, Tag tag)
         {
-            session.Tags.Add(tagName);
-            OPCUAUtils.AddMonitoredItem(session.Subscription, tagName, OPCUAUtils.OnTagValueChanged);
+            session.Tags.Add(tag.Name);
+            OPCUAUtils.AddMonitoredItem(session.Subscription, tag.NodeId, OPCUAUtils.OnTagValueChanged);
         }
         
-        public static void RemoveSelectedTag(CognexSession session, string tagName)
+        public static void RemoveSelectedTag(CognexSession session, Tag tag)
         {
-            session.Tags.Remove(tagName);
-            OPCUAUtils.RemoveMonitoredItem(session.Subscription, tagName);
+            session.Tags.Remove(tag.Name);
+            OPCUAUtils.RemoveMonitoredItem(session.Subscription, tag.NodeId);
         }
 
         public void Disconnect(object parameter)
@@ -129,14 +133,14 @@ namespace CognexEdgeHistorian.MVVM.ViewModel
             cognexSession.Subscription = OPCUAUtils.CreateSubscription(session);
             SessionList.Add(cognexSession);
         }
-        private static async Task<List<(string DisplayName, string NodeId)>> BrowseChildren(Session session, ReferenceDescriptionCollection references)
+        private static async Task<List<Tag>> BrowseChildren(Session session, ReferenceDescriptionCollection references)
         {
-            List<(string DisplayName, string NodeId)> nodes = new List<(string DisplayName, string NodeId)>();
+            List<Tag> nodes = new List<Tag>();
             foreach (var reference in references)
             {
                 string displayName = reference.DisplayName.ToString();
                 string nodeId = reference.NodeId.ToString();
-                nodes.Add((displayName, nodeId));
+                nodes.Add(new Tag(displayName, nodeId));
                 Console.WriteLine($"DisplayName: {displayName}, NodeId: {reference.NodeId}");
 
                 ReferenceDescriptionCollection childReferences;
@@ -156,7 +160,7 @@ namespace CognexEdgeHistorian.MVVM.ViewModel
 
                 if (childReferences.Count > 0)
                 {
-                    List<(string DisplayName, string NodeId)> childNodes = await BrowseChildren(session, childReferences);
+                    List<Tag> childNodes = await BrowseChildren(session, childReferences);
                     nodes.AddRange(childNodes);
                 }
             }
