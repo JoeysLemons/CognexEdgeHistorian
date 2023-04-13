@@ -247,6 +247,7 @@
     <Compile Include="MVVM\View\DataHistorianView.xaml.cs">
       <DependentUpon>DataHistorianView.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Services\NavigationService.cs" />
     <Compile Include="Stores\NavigationStore.cs" />
     <Compile Include="Themes\CameraInfoBox.xaml.cs" />
     <Page Include="MainWindow.xaml">

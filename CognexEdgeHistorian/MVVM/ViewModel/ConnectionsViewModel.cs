@@ -18,6 +18,7 @@ using Session = Opc.Ua.Client.Session;
 using System.Data;
 using CognexEdgeHistorian.Commands;
 using CognexEdgeHistorian.Stores;
+using CognexEdgeHistorian.Services;
 
 namespace CognexEdgeHistorian.MVVM.ViewModel
 {
@@ -197,7 +198,8 @@ namespace CognexEdgeHistorian.MVVM.ViewModel
         {
             ConnectToCamera = new RelayCommand(Connect);
             DisconnectFromCamera = new RelayCommand(Disconnect);
-            NavigateDataHistorianCommand = new NavigateCommand<DataHistorianViewModel>(navigationStore, () => new DataHistorianViewModel(navigationStore));
+            NavigateDataHistorianCommand = new NavigateCommand<DataHistorianViewModel>(new NavigationService<DataHistorianViewModel>(
+                navigationStore, () => new DataHistorianViewModel(navigationStore)));
             SelectedTags = new Dictionary<string, List<string>>();
             SessionList = new ObservableCollection<CognexSession>();
         }

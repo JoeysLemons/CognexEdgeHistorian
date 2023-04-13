@@ -1,4 +1,5 @@
 ﻿using CognexEdgeHistorian.Commands;
+using CognexEdgeHistorian.Services;
 using CognexEdgeHistorian.Stores;
 using System;
 using System.Collections.Generic;
@@ -14,7 +15,8 @@ namespace CognexEdgeHistorian.MVVM.ViewModel
         public ICommand NavigateConnectionsCommand { get; }
         public DataHistorianViewModel(NavigationStore navigationStore)
         {
-            NavigateConnectionsCommand = new NavigateCommand<ConnectionsViewModel>(navigationStore, () => new ConnectionsViewModel(navigationStore));
+            NavigateConnectionsCommand = new NavigateCommand<ConnectionsViewModel>(new NavigationService<ConnectionsViewModel>(
+                navigationStore, () => new ConnectionsViewModel(navigationStore)));
         }
     }
 }
