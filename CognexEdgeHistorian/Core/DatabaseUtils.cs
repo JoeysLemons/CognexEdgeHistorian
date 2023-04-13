@@ -1,4 +1,4 @@
-﻿using CognexEdgeHistorian.MVVM.Models;
+﻿using CognexEdgeHistorian.MVVM.Model;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;

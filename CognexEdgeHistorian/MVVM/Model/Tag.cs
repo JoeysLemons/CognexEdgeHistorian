@@ -6,7 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CognexEdgeHistorian.MVVM.Models
+namespace CognexEdgeHistorian.MVVM.Model
 {
     public class Tag
     {

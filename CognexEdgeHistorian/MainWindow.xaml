@@ -4,7 +4,8 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:viewModel="clr-namespace:CognexEdgeHistorian.MVVM.ViewModel"
-        xmlns:local="clr-namespace:CognexEdgeHistorian"
+        xmlns:local="clr-namespace:CognexEdgeHistorian" 
+        xmlns:view="clr-namespace:CognexEdgeHistorian.MVVM.View" 
         mc:Ignorable="d"
         Title="MainWindow" 
         Height="600" Width="1200"
@@ -13,9 +14,6 @@
         Background="Transparent"
         AllowsTransparency="True">
     
-    <Window.DataContext>
-        <viewModel:MainViewModel/>
-    </Window.DataContext>
 
     <Border Background="{StaticResource Black}" CornerRadius="10">
         <Grid>
@@ -50,7 +48,16 @@
             <ContentControl Grid.Row="1"
                             Grid.Column="1"
                             Margin="10,10,10,20"
-                            Content="{Binding CurrentView}"/>
+                            Content="{Binding CurrentViewModel}">
+                <ContentControl.Resources>
+                    <DataTemplate DataType="{x:Type viewModel:ConnectionsViewModel}">
+                        <view:ConnectionsView/>
+                    </DataTemplate>
+                    <DataTemplate DataType="{x:Type viewModel:DataHistorianViewModel}">
+                        <view:DataHistorianView/>
+                    </DataTemplate>
+                </ContentControl.Resources>
+            </ContentControl>
             <Border Grid.Row="1" Margin="20,10,20,20" CornerRadius="10" Background="{StaticResource BlueSecondary}">
                 <StackPanel>
 

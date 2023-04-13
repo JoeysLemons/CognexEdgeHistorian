@@ -7,7 +7,7 @@ using System.Windows.Controls;
 using System.Windows;
 using CognexEdgeHistorian.MVVM.ViewModel;
 using System.Diagnostics;
-using CognexEdgeHistorian.MVVM.Models;
+using CognexEdgeHistorian.MVVM.Model;
 
 namespace CognexEdgeHistorian.Core
 {

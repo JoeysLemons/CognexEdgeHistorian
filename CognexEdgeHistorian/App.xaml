@@ -4,8 +4,6 @@
              xmlns:viewModel="clr-namespace:CognexEdgeHistorian.MVVM.ViewModel"
              xmlns:view="clr-namespace:CognexEdgeHistorian.MVVM.View"
              xmlns:local="clr-namespace:CognexEdgeHistorian"
-             StartupUri="MainWindow.xaml"
-             Startup="OnStartup"
              Exit="App_OnExit">
     <Application.Resources>
         <ResourceDictionary>

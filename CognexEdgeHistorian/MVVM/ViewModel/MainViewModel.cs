@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CognexEdgeHistorian.Stores;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,26 +9,12 @@ namespace CognexEdgeHistorian.MVVM.ViewModel
 {
     public class MainViewModel : ViewModelBase
     {
-        public DebugViewModel DebugVM { get; set; }
-        public ConnectionsViewModel ConnectionsVM { get; set; }
+        private readonly NavigationStore _navigationStore;
+        public ViewModelBase CurrentViewModel => _navigationStore.CurrentViewModel;
 
-        public DataHistorianViewModel DataHistorianVM { get; set; }
-        private object _currentView;
-
-        public object CurrentView
+        public MainViewModel(NavigationStore navigationStore)
         {
-            get { return _currentView; }
-            set
-            {
-                _currentView = value;
-                OnPropertyChanged();
-            }
-        }
-
-        public MainViewModel()
-        {
-            ConnectionsVM = new ConnectionsViewModel();
-            CurrentView = ConnectionsVM;
+            _navigationStore = navigationStore;
         }
     }
 }

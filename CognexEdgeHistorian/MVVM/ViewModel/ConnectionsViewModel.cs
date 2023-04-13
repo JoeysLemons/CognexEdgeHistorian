@@ -15,8 +15,9 @@ using CognexEdgeHistorian.MVVM.Model;
 using Opc.Ua.Server;
 using System.Net;
 using Session = Opc.Ua.Client.Session;
-using CognexEdgeHistorian.MVVM.Models;
 using System.Data;
+using CognexEdgeHistorian.Commands;
+using CognexEdgeHistorian.Stores;
 
 namespace CognexEdgeHistorian.MVVM.ViewModel
 {
@@ -24,6 +25,7 @@ namespace CognexEdgeHistorian.MVVM.ViewModel
     {
         public ICommand ConnectToCamera { get; }
         public ICommand DisconnectFromCamera { get; }
+        public ICommand NavigateDataHistorianCommand { get; }
 
         /// <summary>
         /// Holds the value of the currently selected camera in the connection pane. The ItemSelected property of the listbox
@@ -191,10 +193,11 @@ namespace CognexEdgeHistorian.MVVM.ViewModel
             allTagsViewSource.Refresh();
         }
             
-        public ConnectionsViewModel()
+        public ConnectionsViewModel(NavigationStore navigationStore)
         {
             ConnectToCamera = new RelayCommand(Connect);
             DisconnectFromCamera = new RelayCommand(Disconnect);
+            NavigateDataHistorianCommand = new NavigateDataHistorianCommand(navigationStore);
             SelectedTags = new Dictionary<string, List<string>>();
             SessionList = new ObservableCollection<CognexSession>();
         }

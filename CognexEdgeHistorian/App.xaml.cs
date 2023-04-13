@@ -1,6 +1,7 @@
 ﻿using CognexEdgeHistorian.Core;
 using CognexEdgeHistorian.MVVM.Model;
 using CognexEdgeHistorian.MVVM.ViewModel;
+using CognexEdgeHistorian.Stores;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -32,13 +33,24 @@ namespace CognexEdgeHistorian
             {
                 Trace.WriteLine(ex.Message);
             }
-            
+
+            App.Current.Shutdown();
         }
 
-        private void OnStartup(object sender, EventArgs e)
+        protected override void OnStartup(StartupEventArgs e)
         {
             DatabaseUtils.ConnectionString = "Data Source=C:\\Programming\\CognexEdgeDatabase\\CognexEdgeHistorianTestDB.db;Version=3;";
             DatabaseUtils.OpenSQLConnection();
+
+            NavigationStore navigationStore = new NavigationStore();
+            navigationStore.CurrentViewModel = new ConnectionsViewModel(navigationStore);
+
+            MainWindow = new MainWindow()
+            {
+                DataContext = new MainViewModel(navigationStore)
+            };
+            MainWindow.Show();
+            base.OnStartup(e);            
         }
     }
 
