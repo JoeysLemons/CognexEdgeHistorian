@@ -17,12 +17,20 @@
                             <VisualStateGroup x:Name="CheckedStates">
                                 <VisualState x:Name="Checked">
                                     <Storyboard>
-                                        <ColorAnimation Storyboard.TargetName="border" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="#2E2E6B" Duration="0:0:0.2"/>
+                                        <ColorAnimation Storyboard.TargetName="border" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="{StaticResource AdamsRedColor}" Duration="0:0:0.2"/>
                                     </Storyboard>
                                 </VisualState>
                                 <VisualState x:Name="Unchecked">
                                     <Storyboard>
                                         <ColorAnimation Storyboard.TargetName="border" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="{TemplateBinding Background}" Duration="0:0:0.2"/>
+                                    </Storyboard>
+                                </VisualState>
+                            </VisualStateGroup>
+                            <VisualStateGroup x:Name="CommonStates">
+                                <VisualState x:Name="Normal"/>
+                                <VisualState x:Name="MouseOver">
+                                    <Storyboard>
+                                        <ColorAnimation Storyboard.TargetName="border" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="{StaticResource ButtonHoverColor}" Duration="0:0:0.2" />
                                     </Storyboard>
                                 </VisualState>
                             </VisualStateGroup>

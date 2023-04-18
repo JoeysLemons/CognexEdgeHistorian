@@ -9,14 +9,14 @@
         mc:Ignorable="d"
         Title="MainWindow" 
         Height="600" Width="1200"
-        MinHeight="600" MinWidth="800"
+        MinHeight="600" MinWidth="900"
         WindowStyle="None"
         ResizeMode="CanResizeWithGrip"
         Background="Transparent"
         AllowsTransparency="True">
     
 
-    <Border Background="{StaticResource Black}" CornerRadius="10">
+    <Border Background="{StaticResource AdamsDarkBlue}" CornerRadius="10">
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="200"/>
@@ -59,7 +59,7 @@
                     </DataTemplate>
                 </ContentControl.Resources>
             </ContentControl>
-            <Border Grid.Row="1" Margin="20,10,20,20" CornerRadius="10" Background="{StaticResource BlueSecondary}">
+            <Border Grid.Row="1" Margin="20,10,20,20" CornerRadius="10" Background="{StaticResource DarkBlueSecondary}">
                 <StackPanel>
 
                 </StackPanel>

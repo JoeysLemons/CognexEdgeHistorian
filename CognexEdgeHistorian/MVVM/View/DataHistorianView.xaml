@@ -4,6 +4,8 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:CognexEdgeHistorian.MVVM.View"
+             xmlns:oxy="http://oxyplot.org/wpf"
+             xmlns:core="clr-namespace:CognexEdgeHistorian.Core"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
     <Grid>
@@ -16,41 +18,41 @@
             <RowDefinition Height="75"/>
             <RowDefinition/>
         </Grid.RowDefinitions>
-        <Border Grid.ColumnSpan="3" Background="{StaticResource BlueSecondary}"
+        <Border Grid.ColumnSpan="3" Background="{StaticResource DarkBlueSecondary}"
                 CornerRadius="5"
                 Margin="5">
             <StackPanel Orientation="Horizontal">
                 <RadioButton Style="{StaticResource TopRibbonItem}"
                              Width="100" Height="40"
                              Margin="10 0 0 0"
-                             Background="{StaticResource Black}"
+                             Background="{StaticResource AdamsBlue}"
                              Content="Data Bindings"/>
                 <RadioButton Style="{StaticResource TopRibbonItem}"
                              Width="100" Height="40"
                              Margin="10 0 0 0"
-                             Background="{StaticResource Black}"
+                             Background="{StaticResource AdamsBlue}"
                              Content="Filters"/>
                 <RadioButton Style="{StaticResource TopRibbonItem}"
                              Width="100" Height="40"
                              Margin="10 0 0 0"
-                             Background="{StaticResource Black}"
+                             Background="{StaticResource AdamsBlue}"
                              Content="Saved Profiles"/>
                 <RadioButton Style="{StaticResource TopRibbonItem}"
                              Width="100" Height="40"
                              Margin="10 0 0 0"
-                             Background="{StaticResource Black}"
+                             Background="{StaticResource AdamsBlue}"
                              Content="Settings"/>
                 <RadioButton Style="{StaticResource TopRibbonItem}"
                              Width="100" Height="40"
                              Margin="10 0 0 0"
-                             Background="{StaticResource Black}"
+                             Background="{StaticResource AdamsBlue}"
                              Content="Connections"
                              Command="{Binding NavigateConnectionsCommand}"/>
             </StackPanel>
         </Border>
         <Border Grid.Row="2" Grid.ColumnSpan="3" 
                 x:Name="BottomBorder"
-                Background="{StaticResource BlueSecondary}"
+                Background="{StaticResource DarkBlueSecondary}"
                 CornerRadius="5"
                 Margin="5">
         </Border>
@@ -59,14 +61,31 @@
                 VerticalAlignment="Top"
                 Background="{StaticResource Black}"
                 CornerRadius="5"
-                Margin="10">
+                Margin="10 15">
+            <Button Style="{StaticResource Button}" Background="{StaticResource AdamsBlue}"
+                    Foreground="LightGray"
+                    Content="Add New Chart"/>
         </Border>
         <Border Grid.Row="2"
                 VerticalAlignment="Stretch"
-                Margin="10 55 10 10"
-                Background="{StaticResource Black}"
+                Margin="10 65 10 10"
+                Background="{StaticResource AdamsBlue}"
                 CornerRadius="5">
         </Border>
-        
+        <Border Grid.Row="1" Grid.Column="1"
+                Background="{StaticResource AdamsBlue}"
+                Margin="10 15"
+                CornerRadius="5">
+            <oxy:PlotView Model="{Binding ActivePlotModel}" Margin="10" Background="Transparent"/>
+        </Border>
+        <Border Grid.Row="1" Grid.Column="2"
+                Margin="10 15 20 15"
+                Background="{StaticResource AdamsBlue}"
+                CornerRadius="5">
+            <StackPanel x:Name="LineGraphProps">
+                <core:PropertyTextBox Style="{StaticResource DataViewPropertyTextBlock}" PropName="Graph Name: "/>
+            </StackPanel>
+            
+        </Border>
     </Grid>
 </UserControl>

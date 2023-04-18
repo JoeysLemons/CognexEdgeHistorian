@@ -24,5 +24,13 @@
     <SolidColorBrush x:Key="WhiteSecondary" Color="#50F2F2F2"/>
     <SolidColorBrush x:Key="ButtonHover" Color="#2E2E6B"/>
     <SolidColorBrush x:Key="ButtonClick" Color="#01030F"/>
-    <SolidColorBrush x:Key="HoverColor" Color="#050c3b"/>
+    <SolidColorBrush x:Key="HoverColor" Color="{Binding ButtonHoverColor}"/>
+    <SolidColorBrush x:Key="AdamsDarkBlue" Color="#262D42"/>
+    <SolidColorBrush x:Key="AdamsBlue" Color="#2F4A9C"/>
+    <SolidColorBrush x:Key="AdamsWhite" Color="#EDECE9"/>
+    <SolidColorBrush x:Key="AdamsGray" Color="#BBC3BD"/>
+    <SolidColorBrush x:Key="AdamsRed" Color="{Binding AdamsRedColor}"/>
+    <Color x:Key="AdamsRedColor">#A07070</Color>
+    <Color x:Key="ButtonHoverColor">#2c7fb7</Color>
+    <Color x:Key="AdamsBlueColor">#2F4A9C</Color>
 </ResourceDictionary>
