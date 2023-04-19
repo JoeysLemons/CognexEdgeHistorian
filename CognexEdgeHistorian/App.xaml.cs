@@ -23,7 +23,7 @@ namespace CognexEdgeHistorian
         {
             try
             {
-                DatabaseUtils.CloseSQLConnection();
+                //DatabaseUtils.CloseSQLConnection();
                 foreach (var session in ConnectionsViewModel.SessionList)
                 {
                     session?.Session.Close();
@@ -40,7 +40,7 @@ namespace CognexEdgeHistorian
         protected override void OnStartup(StartupEventArgs e)
         {
             DatabaseUtils.ConnectionString = "Data Source=C:\\Programming\\CognexEdgeDatabase\\CognexEdgeHistorianTestDB.db;Version=3;";
-            DatabaseUtils.OpenSQLConnection();
+            //DatabaseUtils.OpenSQLConnection();
 
             NavigationStore navigationStore = new NavigationStore();
             navigationStore.CurrentViewModel = new ConnectionsViewModel(navigationStore);

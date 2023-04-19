@@ -7,16 +7,15 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="core:PropertyTextBox">
-                    <Border Background="{StaticResource AdamsDarkBlue}" CornerRadius="5" Margin="10">
+                    <Border Background="{StaticResource AdamsDarkBlue}" CornerRadius="5" Margin="5 2 5 2">
                         <Grid Margin="5">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
 
-                            <TextBlock Text="{TemplateBinding PropName}" />
-                            <TextBox Grid.Column="1" Foreground="{StaticResource AdamsWhite}" Background="Transparent"
-                                     BorderThickness="0"/>
+                            <Label Content="{TemplateBinding PropName}" Foreground="{StaticResource AdamsWhite}"/>
+                            <TextBlock x:Name="ValueTextBox" Grid.Column="1" Foreground="{StaticResource AdamsWhite}" Background="Transparent" Text="{TemplateBinding Text}" VerticalAlignment="Center" HorizontalAlignment="Left"/>
                         </Grid>
                     </Border>
                 </ControlTemplate>

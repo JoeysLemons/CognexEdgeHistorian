@@ -18,5 +18,14 @@ namespace CognexEdgeHistorian.Core
             get { return (string)GetValue(PropNameProperty); }
             set { SetValue(PropNameProperty, value); }
         }
+
+        public static readonly DependencyProperty PropValueProperty =
+            DependencyProperty.Register("PropValue", typeof(string), typeof(PropertyTextBox), new PropertyMetadata(string.Empty));
+
+        public string PropValue
+        {
+            get { return (string)GetValue(PropValueProperty); }
+            set { SetValue(PropValueProperty, value); }
+        }
     }
 }

@@ -61,14 +61,17 @@
                 VerticalAlignment="Top"
                 Background="{StaticResource Black}"
                 CornerRadius="5"
-                Margin="10 15">
-            <Button Style="{StaticResource Button}" Background="{StaticResource AdamsBlue}"
+                Margin="15 15 10 10">
+            <Button x:Name="AddNewChartBtn"
+                    Style="{StaticResource Button}" 
+                    Background="{StaticResource AdamsBlue}"
                     Foreground="LightGray"
-                    Content="Add New Chart"/>
+                    Content="Add New Chart"
+                    Command="{Binding AddNewChartCommand}"/>
         </Border>
         <Border Grid.Row="2"
                 VerticalAlignment="Stretch"
-                Margin="10 65 10 10"
+                Margin="15 65 10 15"
                 Background="{StaticResource AdamsBlue}"
                 CornerRadius="5">
         </Border>
@@ -83,9 +86,13 @@
                 Background="{StaticResource AdamsBlue}"
                 CornerRadius="5">
             <StackPanel x:Name="LineGraphProps">
-                <core:PropertyTextBox Style="{StaticResource DataViewPropertyTextBlock}" PropName="Graph Name: "/>
+                <TextBlock Text="Properties" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="{StaticResource AdamsWhite}" Margin="0 5 0 0"/>
+                <core:PropertyTextBox Style="{StaticResource DataViewPropertyTextBlock}" PropName="Graph Name: " Margin="0 2 0 0" Text="{Binding ActiveGraphProperties.Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                <core:PropertyTextBox Style="{StaticResource DataViewPropertyTextBlock}" PropName="X Axis Title: " Text="{Binding ActiveGraphProperties.XAxisTitle, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                <core:PropertyTextBox Style="{StaticResource DataViewPropertyTextBlock}" PropName="Y Axis Title: " Text="{Binding ActiveGraphProperties.YAxisTitle, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                <core:PropertyTextBox Style="{StaticResource DataViewPropertyTextBlock}" PropName="Axis Color: " Text="{Binding ActiveGraphProperties.AxisColor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                <Button Content="Press Me" Command="{Binding TempCommand}"/>
             </StackPanel>
-            
         </Border>
     </Grid>
 </UserControl>

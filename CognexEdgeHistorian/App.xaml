@@ -17,7 +17,7 @@
                 <ResourceDictionary Source="Themes/ScrollBarStyle.xaml"/>
                 <ResourceDictionary Source="Themes/DevicePaneItem.xaml"/>
                 <ResourceDictionary Source="Themes/TopRibbonItems.xaml"/>
-                <ResourceDictionary Source="Themes/DataViewPropertyTextBlock.xaml"/>
+                <ResourceDictionary Source="Themes/DataViewPropertyTextBox.xaml"/>
             </ResourceDictionary.MergedDictionaries>
             <core:PropertyTextBox x:Key="PropertyTextBox"/>
             <DataTemplate DataType="{x:Type viewModel:DebugViewModel}">

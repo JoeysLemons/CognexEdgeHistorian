@@ -258,6 +258,7 @@
     <Compile Include="Core\PropertyTextBox.cs" />
     <Compile Include="MVVM\Model\CognexSession.cs" />
     <Compile Include="MVVM\Model\DataViewProperty.cs" />
+    <Compile Include="MVVM\Model\GraphProperties.cs" />
     <Compile Include="MVVM\ViewModel\ConnectionsViewModel.cs" />
     <Compile Include="MVVM\ViewModel\DataHistorianViewModel.cs" />
     <Compile Include="MVVM\View\DataHistorianView.xaml.cs">
@@ -301,7 +302,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
-    <Page Include="Themes\DataViewPropertyTextBlock.xaml">
+    <Page Include="Themes\DataViewPropertyTextBox.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
