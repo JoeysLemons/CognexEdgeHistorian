@@ -87,11 +87,11 @@
                 CornerRadius="5">
             <StackPanel x:Name="LineGraphProps">
                 <TextBlock Text="Properties" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="{StaticResource AdamsWhite}" Margin="0 5 0 0"/>
-                <core:PropertyTextBox Style="{StaticResource DataViewPropertyTextBlock}" PropName="Graph Name: " Margin="0 2 0 0" Text="{Binding ActiveGraphProperties.Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                <core:PropertyTextBox Style="{StaticResource DataViewPropertyTextBlock}" PropName="X Axis Title: " Text="{Binding ActiveGraphProperties.XAxisTitle, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                <core:PropertyTextBox Style="{StaticResource DataViewPropertyTextBlock}" PropName="Y Axis Title: " Text="{Binding ActiveGraphProperties.YAxisTitle, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                <core:PropertyTextBox Style="{StaticResource DataViewPropertyTextBlock}" PropName="Axis Color: " Text="{Binding ActiveGraphProperties.AxisColor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                <Button Content="Press Me" Command="{Binding TempCommand}"/>
+                <core:PropertyTextBox Style="{StaticResource DataViewPropertyTextBlock}" PropName="Graph Name: " Margin="0 2 0 0" Text="{Binding ActiveGraphProperties.Name, Mode=TwoWay}"/>
+                <core:PropertyTextBox Style="{StaticResource DataViewPropertyTextBlock}" PropName="X Axis Title: " Text="{Binding ActiveGraphProperties.XAxisTitle, Mode=TwoWay}"/>
+                <core:PropertyTextBox Style="{StaticResource DataViewPropertyTextBlock}" PropName="Y Axis Title: " Text="{Binding ActiveGraphProperties.YAxisTitle, Mode=TwoWay}"/>
+                <core:PropertyTextBox Style="{StaticResource DataViewPropertyTextBlock}" PropName="Axis Color: " Text="{Binding ActiveGraphProperties.AxisColor, Mode=TwoWay}"/>
+                <Button Content="Press me" Command="{Binding TempCommand}"/>
             </StackPanel>
         </Border>
     </Grid>

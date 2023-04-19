@@ -19,6 +19,7 @@ using System.Data;
 using CognexEdgeHistorian.Commands;
 using CognexEdgeHistorian.Stores;
 using CognexEdgeHistorian.Services;
+using System.Diagnostics;
 
 namespace CognexEdgeHistorian.MVVM.ViewModel
 {
@@ -82,7 +83,7 @@ namespace CognexEdgeHistorian.MVVM.ViewModel
         }
         public static Tag GetTagByDisplayName(string displayName)
         {
-            return _allTags.FirstOrDefault(tag => tag.Name == displayName);
+            return _allTags?.FirstOrDefault(tag => tag.Name == displayName);
         }
         /// <summary>
         /// List of all the open OPC UA sessions
@@ -90,87 +91,127 @@ namespace CognexEdgeHistorian.MVVM.ViewModel
         public static ObservableCollection<CognexSession> SessionList { get; set; }
         public static void AddSelectedTag(CognexSession session, Tag tag)
         {
-            session.Tags.Add(tag.Name);
-            OPCUAUtils.AddMonitoredItem(session.Subscription, tag.NodeId, OPCUAUtils.OnTagValueChanged);
-            DataTable camera = DatabaseUtils.GetCameraByEndpoint(GetSelectedCamera().Endpoint);
-            DatabaseUtils.AddTag(Int32.Parse(camera.Rows[0]["id"].ToString()), tag.Name);
+            try
+            {
+                session.Tags.Add(tag.Name);
+                OPCUAUtils.AddMonitoredItem(session.Subscription, tag.NodeId, OPCUAUtils.OnTagValueChanged);
+                DataTable camera = DatabaseUtils.GetCameraByEndpoint(GetSelectedCamera().Endpoint);
+                DatabaseUtils.AddTag(Int32.Parse(camera.Rows[0]["id"].ToString()), tag.Name);
+            }
+            catch (Exception ex)
+            {
+                Trace.WriteLine($"Error while attempting to add tag to Subscription List \nError Message: {ex.Message}\nStack Trace: {ex.StackTrace}");
+            }
         }
         
         public static void RemoveSelectedTag(CognexSession session, Tag tag)
         {
-            session.Tags.Remove(tag.Name);
-            OPCUAUtils.RemoveMonitoredItem(session.Subscription, tag.NodeId);
+            try
+            {
+                session.Tags.Remove(tag.Name);
+                OPCUAUtils.RemoveMonitoredItem(session.Subscription, tag.NodeId);
+            }
+            catch (Exception ex)
+            {
+                Trace.WriteLine($"Error while attempting to remove tag from Subscription List \nError Message: {ex.Message}\nStack Trace: {ex.StackTrace}");
+            }
+            
         }
 
         public void Disconnect(object parameter)
         {
-            CognexSession result = SessionList.FirstOrDefault(s => s.Endpoint == (string)parameter);
-            result.Tags.Clear();
-            SessionList.Remove(result);
-            ClearTagBrowser();
-            result.Session?.Dispose();
+            try
+            {
+                CognexSession result = SessionList.FirstOrDefault(s => s.Endpoint == (string)parameter);
+                result.Tags.Clear();
+                SessionList.Remove(result);
+                ClearTagBrowser();
+                result.Session?.Dispose();
+            }
+            catch (Exception ex)
+            {
+                Trace.WriteLine($"Error while attempting to disconnect from OPC UA server. \nError Message: {ex.Message}\nStack Trace: {ex.StackTrace}");
+            }
+            
         }
         public async void Connect(object parameter)
         {
-            string endpoint = (string)parameter;
-            Session session;
-            var config = OPCUAUtils.CreateApplicationConfiguration();
-            await OPCUAUtils.InitializeApplication();
-            session = await OPCUAUtils.ConnectToServer(config, $"opc.tcp://{endpoint}");
-
-            ReferenceDescriptionCollection references;
-            Byte[] continuationPoint;
-
-            session.Browse(
-                null,
-                null,
-                ObjectIds.ObjectsFolder,
-                0u,
-                BrowseDirection.Forward,
-                ReferenceTypeIds.HierarchicalReferences,
-                true,
-                uint.MaxValue,
-                out continuationPoint,
-                out references);
-
-            CognexSession cognexSession = new CognexSession(session, endpoint, session.SessionName, references);
-            cognexSession.Subscription = OPCUAUtils.CreateSubscription(session);
-            SessionList.Add(cognexSession);
-            DatabaseUtils.AddCamera(session.SessionName, endpoint);
-        }
-        private static async Task<List<Tag>> BrowseChildren(Session session, ReferenceDescriptionCollection references)
-        {
-            List<Tag> nodes = new List<Tag>();
-            foreach (var reference in references)
+            try
             {
-                string displayName = reference.DisplayName.ToString();
-                string nodeId = reference.NodeId.ToString();
-                nodes.Add(new Tag(displayName, nodeId, session.SessionName));
-                Console.WriteLine($"DisplayName: {displayName}, NodeId: {reference.NodeId}");
+                string endpoint = (string)parameter;
+                Session session;
+                var config = OPCUAUtils.CreateApplicationConfiguration();
+                await OPCUAUtils.InitializeApplication();
+                session = await OPCUAUtils.ConnectToServer(config, $"opc.tcp://{endpoint}");
 
-                ReferenceDescriptionCollection childReferences;
+                ReferenceDescriptionCollection references;
                 Byte[] continuationPoint;
 
                 session.Browse(
                     null,
                     null,
-                    ExpandedNodeId.ToNodeId(reference.NodeId, session.NamespaceUris),
+                    ObjectIds.ObjectsFolder,
                     0u,
                     BrowseDirection.Forward,
                     ReferenceTypeIds.HierarchicalReferences,
                     true,
                     uint.MaxValue,
                     out continuationPoint,
-                    out childReferences);
+                    out references);
 
-                if (childReferences.Count > 0)
-                {
-                    List<Tag> childNodes = await BrowseChildren(session, childReferences);
-                    nodes.AddRange(childNodes);
-                }
+                CognexSession cognexSession = new CognexSession(session, endpoint, session.SessionName, references);
+                cognexSession.Subscription = OPCUAUtils.CreateSubscription(session);
+                SessionList.Add(cognexSession);
+                DatabaseUtils.AddCamera(session.SessionName, endpoint);
             }
+            catch (Exception ex)
+            {
+                Trace.WriteLine($"Error while attempting to connect to OPC UA server. \nError Message: {ex.Message}\nStack Trace: {ex.StackTrace}");
+            }
+            
+        }
+        private static async Task<List<Tag>> BrowseChildren(Session session, ReferenceDescriptionCollection references)
+        {
+            
+            try
+            {
+                List<Tag> nodes = new List<Tag>();
+                foreach (var reference in references)
+                {
+                    string displayName = reference.DisplayName.ToString();
+                    string nodeId = reference.NodeId.ToString();
+                    nodes.Add(new Tag(displayName, nodeId, session.SessionName));
+                    Console.WriteLine($"DisplayName: {displayName}, NodeId: {reference.NodeId}");
 
-            return nodes;
+                    ReferenceDescriptionCollection childReferences;
+                    Byte[] continuationPoint;
+
+                    session.Browse(
+                        null,
+                        null,
+                        ExpandedNodeId.ToNodeId(reference.NodeId, session.NamespaceUris),
+                        0u,
+                        BrowseDirection.Forward,
+                        ReferenceTypeIds.HierarchicalReferences,
+                        true,
+                        uint.MaxValue,
+                        out continuationPoint,
+                        out childReferences);
+
+                    if (childReferences.Count > 0)
+                    {
+                        List<Tag> childNodes = await BrowseChildren(session, childReferences);
+                        nodes.AddRange(childNodes);
+                    }
+                }
+                return nodes;
+            }
+            catch (Exception ex)
+            {
+                Trace.WriteLine($"Error while attempting to browse tags from OPC UA server. \nError Message: {ex.Message}\nStack Trace: {ex.StackTrace}");
+                return null;
+            }
+            
         }
 
         public async void UpdateTagBrowser()
@@ -182,15 +223,22 @@ namespace CognexEdgeHistorian.MVVM.ViewModel
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Failed to browse tags: {ex.Message}");
+                Trace.WriteLine($"Error while attempting to update tag browser. \nError Message: {ex.Message}\nStack Trace: {ex.StackTrace}");
             }
         }
         public void ClearTagBrowser()
         {
-            AllTags.Clear();
-            OnPropertyChanged(nameof(AllTags));
-            var allTagsViewSource = CollectionViewSource.GetDefaultView(AllTags);
-            allTagsViewSource.Refresh();
+            try
+            {
+                AllTags.Clear();
+                OnPropertyChanged(nameof(AllTags));
+                var allTagsViewSource = CollectionViewSource.GetDefaultView(AllTags);
+                allTagsViewSource.Refresh();
+            }
+            catch (Exception ex)
+            {
+                Trace.WriteLine($"Error while attempting to clear tags from tag browser. \nError Message: {ex.Message}\nStack Trace: {ex.StackTrace}");
+            }
         }
             
         public ConnectionsViewModel(NavigationStore navigationStore)
@@ -201,6 +249,7 @@ namespace CognexEdgeHistorian.MVVM.ViewModel
                 navigationStore, () => new DataHistorianViewModel(navigationStore)));
             SelectedTags = new Dictionary<string, List<string>>();
             SessionList = new ObservableCollection<CognexSession>();
+
         }
     }
 }

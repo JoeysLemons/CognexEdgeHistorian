@@ -1,15 +1,13 @@
 ﻿using CognexEdgeHistorian.MVVM.ViewModel;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace CognexEdgeHistorian.MVVM.Model
 {
-    public class GraphProperties : INotifyPropertyChanged
+    public class GraphProperties : ViewModelBase
     {
         private string _name;
         private string _xAxisTitle;
@@ -24,6 +22,7 @@ namespace CognexEdgeHistorian.MVVM.Model
                 if (_name != value)
                 {
                     _name = value;
+                    OnGraphPropertyChanged();
                     OnPropertyChanged(nameof(Name));
                 }
             }
@@ -37,6 +36,7 @@ namespace CognexEdgeHistorian.MVVM.Model
                 if (_xAxisTitle != value)
                 {
                     _xAxisTitle = value;
+                    OnGraphPropertyChanged();
                     OnPropertyChanged(nameof(XAxisTitle));
                 }
             }
@@ -50,6 +50,7 @@ namespace CognexEdgeHistorian.MVVM.Model
                 if (_yAxisTitle != value)
                 {
                     _yAxisTitle = value;
+                    OnGraphPropertyChanged();
                     OnPropertyChanged(nameof(YAxisTitle));
                 }
             }
@@ -61,15 +62,16 @@ namespace CognexEdgeHistorian.MVVM.Model
             {if(_axisColor != value)
                 {
                     _axisColor = value;
+                    OnGraphPropertyChanged();
                     OnPropertyChanged(nameof(AxisColor));
                 }
             }
         }
-
-        public event PropertyChangedEventHandler PropertyChanged;
-        protected void OnPropertyChanged([CallerMemberName] string name = null)
+        private void OnGraphPropertyChanged()
         {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+            GraphPropertyChanged?.Invoke(this, EventArgs.Empty);
         }
+
+        public event EventHandler GraphPropertyChanged;
     }
 }

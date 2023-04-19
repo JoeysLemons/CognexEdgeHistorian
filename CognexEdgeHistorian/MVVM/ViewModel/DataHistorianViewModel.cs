@@ -55,20 +55,32 @@ namespace CognexEdgeHistorian.MVVM.ViewModel
 
         public void AddNewChart(object parameter)
         {
-            ActivePlotModel = new PlotModel();
-            ActivePlotModel.Background = OxyColors.Black;
-            LineSeries series = new FunctionSeries(Math.Cos, 0, 10, 0.1, "cos(x)");
-            ActivePlotModel.Series.Add(series);
+            try
+            {
+                ActivePlotModel = new PlotModel();
+                ActivePlotModel.Background = OxyColors.Black;
+                LineSeries series = new FunctionSeries(Math.Cos, 0, 10, 0.1, "cos(x)");
+                ActivePlotModel.Series.Add(series);
+            }
+            catch (Exception ex)
+            {
+                Trace.WriteLine($"Error while attempting to add new chart to Data Historian View. \nError Message: {ex.Message}\nStack Trace: {ex.StackTrace}");
+            }
         }
 
-        public void UpdateActivePlotModel()
+        public void OnGraphPropertyChanged(object sender, EventArgs e)
         {
-            ActivePlotModel.Title = ActiveGraphProperties.Name;
-            ActivePlotModel.DefaultXAxis.Title = ActiveGraphProperties.XAxisTitle;
-            ActivePlotModel.DefaultYAxis.Title = ActiveGraphProperties.YAxisTitle;
-            ActivePlotModel.Axes.Clear();
-            ActivePlotModel.Axes.Add(new LinearAxis { AxislineColor = OxyColor.Parse(ActiveGraphProperties.AxisColor), AxislineThickness = 2, AxislineStyle = LineStyle.Solid, Position = AxisPosition.Bottom });
-            ActivePlotModel.Axes.Add(new LinearAxis { AxislineColor = OxyColor.Parse(ActiveGraphProperties.AxisColor), AxislineThickness = 2, AxislineStyle = LineStyle.Solid, Position = AxisPosition.Left });
+            try
+            {
+                ActivePlotModel.Title = ActiveGraphProperties.Name;
+                ActivePlotModel.Axes.Clear();
+                ActivePlotModel.Axes.Add(new LinearAxis { AxislineColor = OxyColor.Parse(ActiveGraphProperties.AxisColor), AxislineThickness = 2, AxislineStyle = LineStyle.Solid, Position = AxisPosition.Bottom });
+                ActivePlotModel.Axes.Add(new LinearAxis { AxislineColor = OxyColor.Parse(ActiveGraphProperties.AxisColor), AxislineThickness = 2, AxislineStyle = LineStyle.Solid, Position = AxisPosition.Left });
+            }
+            catch (Exception ex)
+            {
+                Trace.WriteLine($"Error while attempting to update Active Plot Model. \nError Message: {ex.Message}\nStack Trace: {ex.StackTrace}");
+            }
         }
 
         public void Temp(object parameter)
@@ -79,13 +91,14 @@ namespace CognexEdgeHistorian.MVVM.ViewModel
         public DataHistorianViewModel(NavigationStore navigationStore)
         {
             ActivePlotModel = new PlotModel();
-            ActivePlotModel.Axes.Add(new LinearAxis { AxislineColor = OxyColors.Red, AxislineThickness = 2, AxislineStyle= LineStyle.Solid, Position = AxisPosition.Bottom}) ;
-            ActivePlotModel.Axes.Add(new LinearAxis { AxislineColor = OxyColors.Red, AxislineThickness = 2, AxislineStyle= LineStyle.Solid, Position = AxisPosition.Left }) ;
+            ActivePlotModel.Axes.Add(new LinearAxis { AxislineColor=OxyColors.White, AxislineThickness=2, AxislineStyle=LineStyle.Solid, Position=AxisPosition.Bottom, TitleColor=OxyColors.White, Title="X Axis" }) ;
+            ActivePlotModel.Axes.Add(new LinearAxis { AxislineColor=OxyColors.White, AxislineThickness=2, AxislineStyle=LineStyle.Solid, Position=AxisPosition.Left, TitleColor=OxyColors.White, Title="Y Axis" }) ;
             ActivePlotModel.Series.Add(new FunctionSeries(Math.Cos, 0, 10, 0.1, "cos(x)"));
             NavigateConnectionsCommand = new NavigateCommand<ConnectionsViewModel>(new NavigationService<ConnectionsViewModel>(
                 navigationStore, () => new ConnectionsViewModel(navigationStore)));
             AddNewChartCommand = new RelayCommand(AddNewChart);
             TempCommand = new RelayCommand(Temp);
+            ActiveGraphProperties.GraphPropertyChanged += OnGraphPropertyChanged;
         }
     }
 }
