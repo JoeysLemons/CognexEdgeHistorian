@@ -21,6 +21,7 @@ namespace CognexEdgeHistorian.MVVM.Model
 		public object AssociatedImage { get; set; }
 		public string NodeId { get; set; }
 		public string CameraName { get; set; }
+		public string Timestamp { get; set; }
 		private string _browseName;
 
 		public string BrowseName

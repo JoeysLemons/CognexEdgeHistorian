@@ -124,7 +124,6 @@ namespace CognexEdgeHistorian.Core
                     adapter.Fill(camera);
                 }
             }
-
             return camera;
         }
 

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Media;
 
 namespace CognexEdgeHistorian.MVVM.Model
 {
@@ -13,7 +14,8 @@ namespace CognexEdgeHistorian.MVVM.Model
         private string _xAxisTitle;
         private string _yAxisTitle;
         private string _axisColor;
-
+        private string _titleColor;
+        
         public string Name
         {
             get { return _name; }
@@ -59,13 +61,37 @@ namespace CognexEdgeHistorian.MVVM.Model
         public string AxisColor {
             get { return _axisColor; }
             set
-            {if(_axisColor != value)
+            {
+                if(_axisColor != value)
                 {
                     _axisColor = value;
                     OnGraphPropertyChanged();
                     OnPropertyChanged(nameof(AxisColor));
                 }
             }
+        }
+
+        public string TitleColor
+        {
+            get { return _titleColor; }
+            set
+            {
+                if(_titleColor != value)
+                {
+                    _titleColor = value;
+                    OnGraphPropertyChanged();
+                    OnPropertyChanged(nameof(TitleColor));
+                }
+            }
+        }
+
+        public GraphProperties()
+        {
+            Name = "Untitled Graph";
+            XAxisTitle = "X Axis";
+            YAxisTitle = "Y Axis";
+            AxisColor = "#FFFFFF";
+            TitleColor = "#FFFFFF";
         }
         private void OnGraphPropertyChanged()
         {

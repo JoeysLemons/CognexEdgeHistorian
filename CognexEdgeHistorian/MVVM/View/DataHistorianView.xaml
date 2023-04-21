@@ -18,6 +18,54 @@
             <RowDefinition Height="75"/>
             <RowDefinition/>
         </Grid.RowDefinitions>
+        <core:Modal x:Name="DataBindingModal" Grid.RowSpan="2" Grid.ColumnSpan="3" IsOpen="{Binding ModalIsOpen}" Panel.ZIndex="10">
+            <Grid Width="400" Height="400">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="35"/>
+                    <RowDefinition/>
+                    <RowDefinition Height="35"/>
+                </Grid.RowDefinitions>
+                <TextBlock Grid.ColumnSpan="2" Text="Data Binding Wizard"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
+                           FontSize="16"
+                           Margin="0 10 0 0"/>
+                <Border Grid.Row="1" Background="{StaticResource AdamsBlue}" Margin="20" CornerRadius="5">
+                    <ListBox Background="Transparent" BorderBrush="Transparent">
+
+                    </ListBox>
+                </Border>
+                <Border Grid.Row="1" Grid.Column="1" Background="{StaticResource AdamsBlue}" Margin="20" CornerRadius="5">
+                    <ListBox Background="Transparent" BorderBrush="Transparent"
+                             ItemsSource="{Binding CurrentCamera.Tags}">
+
+                    </ListBox>
+                </Border>
+                <StackPanel Grid.Row="2" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Center">
+                    <Button Content="Cancel"
+                            Style="{StaticResource Button}"
+                            Background="{StaticResource AdamsBlue}"
+                            Foreground="{StaticResource AdamsWhite}"
+                            Command="{Binding CloseDataBindingModal}"
+                            HorizontalAlignment="Center" VerticalAlignment="Stretch"
+                            Width="100"
+                            Margin="5"/>
+                    <Button Content="Accept"
+                            Style="{StaticResource Button}"
+                            Background="{StaticResource AdamsBlue}"
+                            Foreground="{StaticResource AdamsWhite}"
+                            Command="{Binding CloseDataBindingModal}"
+                            HorizontalAlignment="Center" VerticalAlignment="Stretch"
+                            Width="100"
+                            Margin="5"/>
+                </StackPanel>
+
+            </Grid>
+        </core:Modal>
         <Border Grid.ColumnSpan="3" Background="{StaticResource DarkBlueSecondary}"
                 CornerRadius="5"
                 Margin="5">
@@ -26,7 +74,8 @@
                              Width="100" Height="40"
                              Margin="10 0 0 0"
                              Background="{StaticResource AdamsBlue}"
-                             Content="Data Bindings"/>
+                             Content="Data Bindings"
+                             Command="{Binding OpenDataBindingModal}"/>
                 <RadioButton Style="{StaticResource TopRibbonItem}"
                              Width="100" Height="40"
                              Margin="10 0 0 0"
@@ -85,14 +134,33 @@
                 Margin="10 15 20 15"
                 Background="{StaticResource AdamsBlue}"
                 CornerRadius="5">
-            <StackPanel x:Name="LineGraphProps">
-                <TextBlock Text="Properties" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="{StaticResource AdamsWhite}" Margin="0 5 0 0"/>
-                <core:PropertyTextBox Style="{StaticResource DataViewPropertyTextBlock}" PropName="Graph Name: " Margin="0 2 0 0" Text="{Binding ActiveGraphProperties.Name, Mode=TwoWay}"/>
-                <core:PropertyTextBox Style="{StaticResource DataViewPropertyTextBlock}" PropName="X Axis Title: " Text="{Binding ActiveGraphProperties.XAxisTitle, Mode=TwoWay}"/>
-                <core:PropertyTextBox Style="{StaticResource DataViewPropertyTextBlock}" PropName="Y Axis Title: " Text="{Binding ActiveGraphProperties.YAxisTitle, Mode=TwoWay}"/>
-                <core:PropertyTextBox Style="{StaticResource DataViewPropertyTextBlock}" PropName="Axis Color: " Text="{Binding ActiveGraphProperties.AxisColor, Mode=TwoWay}"/>
-                <Button Content="Press me" Command="{Binding TempCommand}"/>
-            </StackPanel>
+            
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="auto"/>
+                    <ColumnDefinition/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="auto"/>
+                    <RowDefinition/>
+                </Grid.RowDefinitions>
+                <TextBlock Grid.ColumnSpan="2" Text="Properties" VerticalAlignment="Top" HorizontalAlignment="Center" Foreground="{StaticResource AdamsWhite}" Margin="0 5 0 0"/>
+                <StackPanel x:Name="LineGraphPropNames" Grid.Row="1">
+                    <TextBlock Style="{StaticResource PropertyNameTextBlock}" Text="Graph Name"/>
+                    <TextBlock Style="{StaticResource PropertyNameTextBlock}" Text="X Axis Title"/>
+                    <TextBlock Style="{StaticResource PropertyNameTextBlock}" Text="Y Axis Title"/>
+                    <TextBlock Style="{StaticResource PropertyNameTextBlock}" Text="Axis Color"/>
+                    <TextBlock Style="{StaticResource PropertyNameTextBlock}" Text="Title Color"/>
+                </StackPanel>
+                <StackPanel x:Name="LineGraphPropValues" Grid.Row="1" Grid.Column="1">
+                    <TextBox Style="{StaticResource PropertyValueTextBox}" Text="{Binding ActiveGraphProperties.Name}" />
+                    <TextBox Style="{StaticResource PropertyValueTextBox}" Text="{Binding ActiveGraphProperties.XAxisTitle}"/>
+                    <TextBox Style="{StaticResource PropertyValueTextBox}" Text="{Binding ActiveGraphProperties.YAxisTitle}"/>
+                    <TextBox Style="{StaticResource PropertyValueTextBox}" Text="{Binding ActiveGraphProperties.AxisColor}"/>
+                    <TextBox Style="{StaticResource PropertyValueTextBox}" Text="{Binding ActiveGraphProperties.TitleColor}"/>
+                </StackPanel>
+            </Grid>
+                    
         </Border>
     </Grid>
 </UserControl>

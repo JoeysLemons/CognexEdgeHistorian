@@ -18,6 +18,10 @@
                 <ResourceDictionary Source="Themes/DevicePaneItem.xaml"/>
                 <ResourceDictionary Source="Themes/TopRibbonItems.xaml"/>
                 <ResourceDictionary Source="Themes/DataViewPropertyTextBox.xaml"/>
+                <ResourceDictionary Source="Themes/PropertyValueTextBox.xaml"/>
+                <ResourceDictionary Source="Themes/PropertyNameTextBlock.xaml"/>
+                <ResourceDictionary Source="Themes/PropertyNameTextBlock.xaml"/>
+                <ResourceDictionary Source="Themes/GenericModal.xaml"/>
             </ResourceDictionary.MergedDictionaries>
             <core:PropertyTextBox x:Key="PropertyTextBox"/>
             <DataTemplate DataType="{x:Type viewModel:DebugViewModel}">
