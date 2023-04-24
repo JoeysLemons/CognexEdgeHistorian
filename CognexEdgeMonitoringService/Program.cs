@@ -17,7 +17,7 @@ namespace CognexEdgeMonitoringService
             ServiceBase[] ServicesToRun;
             ServicesToRun = new ServiceBase[]
             {
-                new Service1()
+                new CognexMonitoringService()
             };
             ServiceBase.Run(ServicesToRun);
         }

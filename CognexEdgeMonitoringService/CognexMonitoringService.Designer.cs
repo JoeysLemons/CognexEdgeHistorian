@@ -1,6 +1,6 @@
 ﻿namespace CognexEdgeMonitoringService
 {
-    partial class Service1
+    partial class CognexMonitoringService
     {
         /// <summary> 
         /// Required designer variable.
