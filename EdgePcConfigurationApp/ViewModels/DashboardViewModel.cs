@@ -106,8 +106,7 @@ namespace EdgePcConfigurationApp.ViewModels
                 {
                     string displayName = reference.DisplayName.ToString();
                     string nodeId = reference.NodeId.ToString();
-                    Tag tag = new Tag(displayName, nodeId, session.SessionName);
-                    Tags.Add(tag);
+                    //nodes.Add(new Tag(displayName, nodeId, session.SessionName));
                     Console.WriteLine($"DisplayName: {displayName}, NodeId: {reference.NodeId}");
 
                     ReferenceDescriptionCollection childReferences;
