@@ -3,6 +3,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="clr-namespace:EdgePcConfigurationApp.Views.Pages"
+    xmlns:models="clr-namespace:EdgePcConfigurationApp.Models"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     Title="DashboardPage"
@@ -35,8 +36,8 @@
         </StackPanel>
         <ListBox x:Name="DeviceConnectionPane"
                  Margin="10" Grid.Row="1" SelectionMode="Single"
-                 ItemsSource="{Binding ViewModel.CognexCameras}"
-                 SelectedItem="{Binding ViewModel.SelectedCamera}">
+                 SelectedItem="{Binding ViewModel.SelectedCamera}"
+                 ItemsSource="{Binding ViewModel.CognexCameras}">
             <ListBox.ItemTemplate>
                 <DataTemplate>
                     <ToggleButton HorizontalAlignment="Stretch" HorizontalContentAlignment="Left">
@@ -48,8 +49,12 @@
                 </DataTemplate>
             </ListBox.ItemTemplate>
         </ListBox>
-        <TreeView Name="TagBrowser" Margin="10 0" Grid.Column="1" Grid.Row="1">
-            
+        <TreeView Name="TagBrowser" Margin="10 0" Grid.Column="1" Grid.Row="1" ItemsSource="{Binding ViewModel.SelectedCamera.Tags}" Visibility="Hidden">
+            <TreeView.ItemTemplate>
+                <HierarchicalDataTemplate DataType="{x:Type models:Tag}" ItemsSource="{Binding Children}">
+                    <TextBlock Text="{Binding DisplayName}" />
+                </HierarchicalDataTemplate>
+            </TreeView.ItemTemplate>
         </TreeView>
     </Grid>
 </ui:UiPage>

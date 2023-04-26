@@ -25,6 +25,7 @@ namespace EdgePcConfigurationApp.Views.Windows
             SetPageService(pageService);
 
             navigationService.SetNavigationControl(RootNavigation);
+            WindowStyle = WindowStyle.None;
         }
 
         #region INavigationWindow methods

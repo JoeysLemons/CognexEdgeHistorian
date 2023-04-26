@@ -37,14 +37,9 @@ namespace EdgePcConfigurationApp.ViewModels
                 UpdateTagBrowser();
             }
         }
+        public void OnNavigatedTo() { }
+        public void OnNavigatedFrom() { }
 
-        public void OnNavigatedTo()
-        {
-        }
-
-        public void OnNavigatedFrom()
-        {
-        }
         private bool CanConnectToCamera()
         {
             
@@ -96,22 +91,26 @@ namespace EdgePcConfigurationApp.ViewModels
         }
 
 
-        private async Task<List<Tag>> BrowseChildren(Session session, ReferenceDescriptionCollection references)
+        public async Task<ObservableCollection<Tag>> BrowseChildren(Session session, ReferenceDescriptionCollection references)
         {
-
             try
             {
-                List<Tag> nodes = new List<Tag>();
+                ObservableCollection<Tag> nodes = new ObservableCollection<Tag>();
+
                 foreach (var reference in references)
                 {
                     string displayName = reference.DisplayName.ToString();
                     string nodeId = reference.NodeId.ToString();
-                    //nodes.Add(new Tag(displayName, nodeId, session.SessionName));
+
                     Console.WriteLine($"DisplayName: {displayName}, NodeId: {reference.NodeId}");
+
+                    // Create a new Tag object for this node
+                    Tag node = new Tag(displayName, nodeId, session.SessionName);
 
                     ReferenceDescriptionCollection childReferences;
                     Byte[] continuationPoint;
 
+                    // Browse the children of this node recursively
                     session.Browse(
                         null,
                         null,
@@ -126,24 +125,36 @@ namespace EdgePcConfigurationApp.ViewModels
 
                     if (childReferences.Count > 0)
                     {
-                        List<Tag> childNodes = await BrowseChildren(session, childReferences);
-                        nodes.AddRange(childNodes);
+                        // Recursively browse the children of this node
+                        ObservableCollection<Tag> childNodes = await BrowseChildren(session, childReferences);
+
+                        // Add the child nodes to the current node
+                        node.Children.AddRange(childNodes);
                     }
+
+                    // Add the current node to the list of nodes
+                    nodes.Add(node);
                 }
+
                 return nodes;
             }
             catch (Exception ex)
             {
-                Trace.WriteLine($"Error while attempting to browse tags from OPC UA server. \nError Message: {ex.Message}\nStack Trace: {ex.StackTrace}");
+                Trace.WriteLine($"Error attempting to browse Server Tag list. Error Message {ex.Message}");
                 return null;
             }
         }
+    
         public async void UpdateTagBrowser()
         {
             try
             {
                 if (SelectedCamera != null)
-                    await BrowseChildren(SelectedCamera.Session, SelectedCamera.Session.FetchReferences(SelectedCamera.Session.SessionId));
+                    SelectedCamera.Tags = await BrowseChildren(SelectedCamera.Session, SelectedCamera.Session.FetchReferences(SelectedCamera.Session.SessionId));
+            }
+            catch(NullReferenceException)
+            {
+                Trace.WriteLine($"SelectedCamera.Session was null or returned a null value while attempting to update the tag browser.");
             }
             catch (Exception ex)
             {
