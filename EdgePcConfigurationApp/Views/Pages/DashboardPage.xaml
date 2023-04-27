@@ -4,6 +4,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="clr-namespace:EdgePcConfigurationApp.Views.Pages"
     xmlns:models="clr-namespace:EdgePcConfigurationApp.Models"
+    xmlns:helpers="clr-namespace:EdgePcConfigurationApp.Helpers"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     Title="DashboardPage"
@@ -14,6 +15,10 @@
     Foreground="{DynamicResource TextFillColorPrimaryBrush}"
     mc:Ignorable="d">
 
+    <ui:UiPage.Resources>
+        <Color x:Key="TextOnAccentFillColorPrimary">#FFFF</Color>
+        <Color x:Key="SystemAccentColorSecondary">#5762D5</Color>
+    </ui:UiPage.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition/>
@@ -40,21 +45,31 @@
                  ItemsSource="{Binding ViewModel.CognexCameras}">
             <ListBox.ItemTemplate>
                 <DataTemplate>
-                    <ToggleButton HorizontalAlignment="Stretch" HorizontalContentAlignment="Left">
-                        <StackPanel>
-                            <TextBlock x:Name="SessionName" Text="{Binding SessionName}"/>
-                            <TextBlock x:Name="SessionEndpoint" Text="{Binding Endpoint}"/>
-                        </StackPanel>
-                    </ToggleButton>
+                    <StackPanel>
+                        <TextBlock x:Name="SessionName" Text="{Binding Session}"/>
+                        <TextBlock x:Name="SessionEndpoint" Text="{Binding Endpoint}"/>
+                    </StackPanel>
                 </DataTemplate>
             </ListBox.ItemTemplate>
         </ListBox>
-        <TreeView Name="TagBrowser" Margin="10 0" Grid.Column="1" Grid.Row="1" ItemsSource="{Binding ViewModel.SelectedCamera.Tags}" Visibility="Hidden">
-            <TreeView.ItemTemplate>
-                <HierarchicalDataTemplate DataType="{x:Type models:Tag}" ItemsSource="{Binding Children}">
-                    <TextBlock Text="{Binding DisplayName}" />
-                </HierarchicalDataTemplate>
-            </TreeView.ItemTemplate>
-        </TreeView>
+        <Border CornerRadius="5" Grid.Row="1" Grid.Column="1" Margin="10">
+            <ScrollViewer Focusable="True">
+                <TreeView x:Name="TagBrowser" ItemsSource="{Binding ViewModel.Tags}" ScrollViewer.CanContentScroll="True">
+                    <TreeView.ItemTemplate>
+                        <HierarchicalDataTemplate DataType="{x:Type models:Tag}" ItemsSource="{Binding Children}">
+                            <ToggleButton Command="{Binding SubscribeCommand}" Width="300" HorizontalContentAlignment="Left">
+                                <TextBlock Text="{Binding Name}" FontSize="12"/>
+                            </ToggleButton>
+                        </HierarchicalDataTemplate>
+                    </TreeView.ItemTemplate>
+                    <TreeView.ItemContainerStyle>
+                        <Style TargetType="TreeViewItem" BasedOn="{StaticResource {x:Type TreeViewItem}}">
+                            <Setter Property="Background" Value="Transparent" />
+                            <Setter Property="BorderBrush" Value="Transparent" />
+                        </Style>
+                    </TreeView.ItemContainerStyle>
+                </TreeView>
+            </ScrollViewer>
+        </Border>
     </Grid>
 </ui:UiPage>

@@ -26,6 +26,9 @@ namespace EdgePcConfigurationApp.ViewModels
 
         public MainWindowViewModel(INavigationService navigationService)
         {
+            var accent = System.Windows.Media.Color.FromRgb(87, 98, 213);
+            Wpf.Ui.Appearance.Accent.Apply(accent);
+
             if (!_isInitialized)
                 InitializeViewModel();
         }

@@ -4,6 +4,7 @@ using EdgePcConfigurationApp.Helpers;
 using EdgePcConfigurationApp.Models;
 using Opc.Ua;
 using Opc.Ua.Client;
+using Opc.Ua.Server;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -14,6 +15,7 @@ using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Input;
 using Wpf.Ui.Common.Interfaces;
+using Session = Opc.Ua.Client.Session;
 
 namespace EdgePcConfigurationApp.ViewModels
 {
@@ -26,7 +28,17 @@ namespace EdgePcConfigurationApp.ViewModels
 
         private CognexCamera? selectedCamera;
 
-        public ObservableCollection<Tag> Tags { get; set; } = new ObservableCollection<Tag>();
+        private ObservableCollection<Tag> _tags;
+
+        public ObservableCollection<Tag> Tags
+        {
+            get { return _tags; }
+            set 
+            {
+                _tags = value; 
+                OnPropertyChanged(nameof(Tags));
+            }
+        }
 
         public CognexCamera SelectedCamera
         {
@@ -60,7 +72,22 @@ namespace EdgePcConfigurationApp.ViewModels
                 var opcConfig = OPCUAUtils.CreateApplicationConfiguration();
                 await OPCUAUtils.InitializeApplication();
                 Session session = await OPCUAUtils.ConnectToServer(opcConfig, $"opc.tcp://{endpoint}:4840");
-                CognexCameras.Add(new CognexCamera(session.SessionId.ToString(), endpoint));
+
+                ReferenceDescriptionCollection references;
+                Byte[] continuationPoint;
+                session.Browse(
+                    null,
+                    null,
+                    ObjectIds.ObjectsFolder,
+                    0u,
+                    BrowseDirection.Forward,
+                    ReferenceTypeIds.HierarchicalReferences,
+                    true,
+                    uint.MaxValue,
+                    out continuationPoint,
+                    out references);
+                CognexCamera camera = new CognexCamera(session, session.SessionName, endpoint, references);
+                CognexCameras.Add(camera);
             }
             catch(Exception ex)
             {
@@ -88,6 +115,17 @@ namespace EdgePcConfigurationApp.ViewModels
             {
                 Trace.WriteLine($"Error while attempting to disconnect from OPC UA server. \nError Message: {ex.Message}\nStack Trace: {ex.StackTrace}");
             }
+        }
+
+        [RelayCommand]
+        public void SubscribeToTag(object parameter)
+        {
+            Button button = parameter as Button;
+            if (button == null)
+                return;
+            if (button.Content == "Subscribe") button.Content = "Unsubscribe";
+            else button.Content = "Subscribe";
+
         }
 
 
@@ -150,7 +188,11 @@ namespace EdgePcConfigurationApp.ViewModels
             try
             {
                 if (SelectedCamera != null)
-                    SelectedCamera.Tags = await BrowseChildren(SelectedCamera.Session, SelectedCamera.Session.FetchReferences(SelectedCamera.Session.SessionId));
+                {
+                    SelectedCamera.Tags = await BrowseChildren(SelectedCamera.Session, SelectedCamera.References);
+                    Tags = SelectedCamera.Tags;
+                }
+                    
             }
             catch(NullReferenceException)
             {

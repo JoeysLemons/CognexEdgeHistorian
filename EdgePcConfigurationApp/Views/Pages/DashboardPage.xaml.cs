@@ -1,4 +1,9 @@
-﻿using Wpf.Ui.Common.Interfaces;
+﻿using System.Collections.Generic;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
+using System.Windows.Media;
+using Wpf.Ui.Common.Interfaces;
 
 namespace EdgePcConfigurationApp.Views.Pages
 {
