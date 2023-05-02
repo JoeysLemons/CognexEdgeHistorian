@@ -28,7 +28,7 @@
             <RowDefinition Height="75"/>
             <RowDefinition/>
         </Grid.RowDefinitions>
-        <StackPanel Orientation="Horizontal">
+        <StackPanel Orientation="Horizontal" Grid.ColumnSpan="2">
             <ui:TextBox x:Name="IpAddress" Width="310" Margin="10" Text="{Binding ViewModel.Endpoint, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
             <ui:Button Content="Connect"
                        Margin="5"
@@ -38,6 +38,9 @@
                        Margin="5"
                        Command="{Binding ViewModel.DisconnectFromCameraCommand}"
                        CommandParameter="{Binding ElementName=DeviceConnectionPane, Path=SelectedItem}"/>
+            <ui:Button Content="Reset" Margin="5"/>
+            <ui:Button Content="Apply Configuration" Margin="5"
+                       Command="{Binding ViewModel.ApplyChangesCommand}"/>
         </StackPanel>
         <ListBox x:Name="DeviceConnectionPane"
                  Margin="10" Grid.Row="1" SelectionMode="Single"
@@ -46,19 +49,24 @@
             <ListBox.ItemTemplate>
                 <DataTemplate>
                     <StackPanel>
-                        <TextBlock x:Name="SessionName" Text="{Binding Session}"/>
+                        <TextBlock x:Name="SessionName" Text="{Binding HostName}"/>
                         <TextBlock x:Name="SessionEndpoint" Text="{Binding Endpoint}"/>
                     </StackPanel>
                 </DataTemplate>
             </ListBox.ItemTemplate>
         </ListBox>
         <Border CornerRadius="5" Grid.Row="1" Grid.Column="1" Margin="10">
-            <ScrollViewer Focusable="True">
+            <ScrollViewer Focusable="True" PreviewMouseWheel="ListViewScrollViewer_PreviewMouseWheel">
                 <TreeView x:Name="TagBrowser" ItemsSource="{Binding ViewModel.Tags}" ScrollViewer.CanContentScroll="True">
                     <TreeView.ItemTemplate>
                         <HierarchicalDataTemplate DataType="{x:Type models:Tag}" ItemsSource="{Binding Children}">
-                            <ToggleButton Command="{Binding SubscribeCommand}" Width="300" HorizontalContentAlignment="Left">
-                                <TextBlock Text="{Binding Name}" FontSize="12"/>
+                            <ToggleButton Width="300" HorizontalContentAlignment="Left" 
+                                          Command="{Binding Path=DataContext.ViewModel.SubscribeTagCommand,  RelativeSource={RelativeSource AncestorType={x:Type TreeView}}}"
+                                          CommandParameter="{Binding}"
+                                          IsChecked="{Binding IsChecked}">
+                                <StackPanel>
+                                    <TextBlock Text="{Binding Name}" FontSize="12"/>
+                                </StackPanel>
                             </ToggleButton>
                         </HierarchicalDataTemplate>
                     </TreeView.ItemTemplate>

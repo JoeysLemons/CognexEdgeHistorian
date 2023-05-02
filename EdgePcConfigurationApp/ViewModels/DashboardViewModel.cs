@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 using System.Windows.Controls;
 using System.Windows.Documents;
@@ -62,7 +63,8 @@ namespace EdgePcConfigurationApp.ViewModels
                 return false;
             return true;
         }
-        
+
+        #region RelayCommands
         [RelayCommand(CanExecute = nameof(CanConnectToCamera))]
         private async Task ConnectToCamera()
         {
@@ -86,17 +88,17 @@ namespace EdgePcConfigurationApp.ViewModels
                     uint.MaxValue,
                     out continuationPoint,
                     out references);
-                CognexCamera camera = new CognexCamera(session, session.SessionName, endpoint, references);
+                int cameraId = DatabaseUtils.AddCamera(session.SessionName, endpoint);
+
+                CognexCamera camera = new CognexCamera(session, session.SessionName, endpoint, cameraId, references);
                 CognexCameras.Add(camera);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Trace.WriteLine($"Error while attempting to connect to camera. Error Message: {ex.Message}");
             }
-            
-            
         }
-        
+
         [RelayCommand]
         private void DisconnectFromCamera()
         {
@@ -118,15 +120,50 @@ namespace EdgePcConfigurationApp.ViewModels
         }
 
         [RelayCommand]
-        public void SubscribeToTag(object parameter)
+        public void SubscribeTag(object parameter)
         {
-            Button button = parameter as Button;
-            if (button == null)
+            try
+            {
+                Tag selectedItem = parameter as Tag;
+                if (selectedItem == null)
+                {
+                    throw new NullReferenceException();
+                }
+                if (selectedItem.IsChecked)
+                {
+                    selectedCamera.SubscribedTags.Add(selectedItem);
+                }
+                else
+                {
+                    selectedCamera.SubscribedTags.Remove(selectedItem);
+                }
+                
+            }
+            catch (NullReferenceException ex)
+            {
+                Trace.WriteLine($"Could not convert parameter to ListBoxItem. \nError Message: {ex.Message}");
                 return;
-            if (button.Content == "Subscribe") button.Content = "Unsubscribe";
-            else button.Content = "Subscribe";
+            }
+            catch (Exception ex)
+            {
+                Trace.WriteLine($"Error while attempting to add tag to subscribtion list. \nError Message: {ex.Message}");
+                return;
+            }
+
 
         }
+
+        [RelayCommand]
+        public void ApplyChanges()
+        {
+            foreach (Tag tag in selectedCamera.SubscribedTags)
+            {
+                tag.TagId = DatabaseUtils.AddTag(selectedCamera.CameraID, tag.Name, tag.NodeId);
+            }
+        }
+        #endregion RelayCommands
+
+
 
 
         public async Task<ObservableCollection<Tag>> BrowseChildren(Session session, ReferenceDescriptionCollection references)
@@ -182,7 +219,23 @@ namespace EdgePcConfigurationApp.ViewModels
                 return null;
             }
         }
-    
+        
+        public void SetTagBrowserConfiguration(ObservableCollection<Tag> tagList, List<string> searchParams)
+        {
+            foreach(Tag tag in tagList)
+            {
+                if(searchParams.Contains(tag.Name))
+                {
+                    tag.IsChecked = true;
+                    SelectedCamera.SubscribedTags.Add(tag);
+                }
+                if(tag.Children.Count > 0)
+                {
+                    ObservableCollection<Tag> children = new ObservableCollection<Tag>(tag.Children);
+                    SetTagBrowserConfiguration(children, searchParams); //mmmm recursion 
+                }
+            }
+        }
         public async void UpdateTagBrowser()
         {
             try
@@ -190,6 +243,15 @@ namespace EdgePcConfigurationApp.ViewModels
                 if (SelectedCamera != null)
                 {
                     SelectedCamera.Tags = await BrowseChildren(SelectedCamera.Session, SelectedCamera.References);
+                    //Check to see if camera exists in database
+                    if (DatabaseUtils.CameraExists(SelectedCamera.Endpoint))
+                    {
+                        List<string> tagsNames = DatabaseUtils.GetSavedTagConfiguration(SelectedCamera.Endpoint);
+                        if(tagsNames.Count != 0)
+                        {
+                            SetTagBrowserConfiguration(SelectedCamera.Tags, tagsNames);
+                        }
+                    }
                     Tags = SelectedCamera.Tags;
                 }
                     

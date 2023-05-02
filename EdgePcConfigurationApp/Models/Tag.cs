@@ -23,45 +23,19 @@ namespace EdgePcConfigurationApp.Models
 		public string DataType { get; set; }
 		public object Value { get; set; }
 		public string Location { get; set; }
+		public int TagId { get; set; }
 		public List<Tag> Children 
 		{ 
 			get; 
 			set; 
 		} = new List<Tag>();
-		private string _buttonText = "Subscribe";
 
-		public string ButtonText
-		{
-			get { return _buttonText; }
-			set 
-			{ 
-				_buttonText = value;
-				OnPropertyChanged();
-			}
-		}
-
-		private Color _buttonColor = Color.Transparent;
-
-		public Color ButtonColor
-		{
-			get { return _buttonColor; }
-			set 
-			{ 
-				_buttonColor = value;
-				OnPropertyChanged(nameof(ButtonColor));
-			}
-		}
-
+		public bool IsChecked { get; set; } = false;
 
 		public string NodeId { get; set; }
 		public string CameraName { get; set; }
 		public string Timestamp { get; set; }
 		private string _browseName;
-		public void SubscribeTag()
-		{
-			if (ButtonColor == Color.Transparent) ButtonColor = Color.SkyBlue;
-			else ButtonColor = Color.Transparent;
-		}
 		public string BrowseName
 		{
 			get { return _browseName; }
@@ -71,18 +45,6 @@ namespace EdgePcConfigurationApp.Models
 		{
 			_browseName = browseName;
 		}
-        private ICommand _subscribeCommand;
-        public ICommand SubscribeCommand
-        {
-            get
-            {
-                if (_subscribeCommand == null)
-                {
-                    _subscribeCommand = new RelayCommand(SubscribeTag);
-                }
-                return _subscribeCommand;
-            }
-        }
 
         public Tag(string name, string id, string cameraName)
 		{

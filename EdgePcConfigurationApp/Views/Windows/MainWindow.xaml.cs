@@ -1,4 +1,6 @@
-﻿using System;
+﻿using EdgePcConfigurationApp.Helpers;
+using System;
+using System.Data.Entity;
 using System.Windows;
 using System.Windows.Controls;
 using Wpf.Ui.Controls.Interfaces;
@@ -26,6 +28,7 @@ namespace EdgePcConfigurationApp.Views.Windows
 
             navigationService.SetNavigationControl(RootNavigation);
             WindowStyle = WindowStyle.None;
+            DatabaseUtils.OpenSQLConnection("Data Source=(localdb)\\EdgeHistorian;Initial Catalog=EdgeHistorian;Integrated Security=True");
         }
 
         #region INavigationWindow methods

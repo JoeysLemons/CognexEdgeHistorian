@@ -23,5 +23,13 @@ namespace EdgePcConfigurationApp.Views.Pages
 
             InitializeComponent();
         }
+
+        //Handles mouse wheel scrolling in the tag browser
+        private void ListViewScrollViewer_PreviewMouseWheel(object sender, System.Windows.Input.MouseWheelEventArgs e)
+        {
+            ScrollViewer scv = (ScrollViewer)sender;
+            scv.ScrollToVerticalOffset(scv.VerticalOffset - e.Delta);
+            e.Handled = true;
+        }
     }
 }
