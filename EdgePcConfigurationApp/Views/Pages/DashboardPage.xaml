@@ -64,7 +64,7 @@
                                           Command="{Binding Path=DataContext.ViewModel.SubscribeTagCommand,  RelativeSource={RelativeSource AncestorType={x:Type TreeView}}}"
                                           CommandParameter="{Binding}"
                                           IsChecked="{Binding IsChecked}">
-                                <StackPanel>
+                                <StackPanel Orientation="Horizontal">
                                     <TextBlock Text="{Binding Name}" FontSize="12"/>
                                 </StackPanel>
                             </ToggleButton>

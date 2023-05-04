@@ -1,6 +1,9 @@
 ﻿using EdgePcConfigurationApp.Helpers;
+using EdgePcConfigurationApp.Models;
+using EdgePcConfigurationApp.ViewModels;
 using System;
 using System.Data.Entity;
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 using Wpf.Ui.Controls.Interfaces;
@@ -28,7 +31,15 @@ namespace EdgePcConfigurationApp.Views.Windows
 
             navigationService.SetNavigationControl(RootNavigation);
             WindowStyle = WindowStyle.None;
-            DatabaseUtils.OpenSQLConnection("Data Source=(localdb)\\EdgeHistorian;Initial Catalog=EdgeHistorian;Integrated Security=True");
+            try
+            {
+                DatabaseUtils.OpenSQLConnection("Data Source=(localdb)\\EdgeHistorian;Initial Catalog=EdgeHistorian;Integrated Security=True");
+            }
+            catch(Exception ex)
+            {
+                Trace.WriteLine($"Failed to connect to database. Error Message: {ex.Message}");
+            }
+            
         }
 
         #region INavigationWindow methods
@@ -59,7 +70,10 @@ namespace EdgePcConfigurationApp.Views.Windows
         protected override void OnClosed(EventArgs e)
         {
             base.OnClosed(e);
-
+            if(DashboardViewModel.CognexCameras.Count > 0)
+            {
+                DashboardViewModel.DisconnectFromAllDevices(DashboardViewModel.CognexCameras);
+            }
             // Make sure that closing this window will begin the process of closing the application.
             Application.Current.Shutdown();
         }

@@ -22,7 +22,7 @@ namespace EdgePcConfigurationApp.ViewModels
 {
     public partial class DashboardViewModel : ObservableObject, INavigationAware
     {
-        public ObservableCollection<CognexCamera> CognexCameras { get; set; } = new ObservableCollection<CognexCamera>();
+        public static ObservableCollection<CognexCamera> CognexCameras { get; set; } = new ObservableCollection<CognexCamera>();
         [ObservableProperty]
         [NotifyCanExecuteChangedFor(nameof(ConnectToCameraCommand))]
         private string? endpoint;
@@ -30,6 +30,7 @@ namespace EdgePcConfigurationApp.ViewModels
         private CognexCamera? selectedCamera;
 
         private ObservableCollection<Tag> _tags;
+        private bool changesSaved { get; set; } = true;
 
         public ObservableCollection<Tag> Tags
         {
@@ -100,7 +101,7 @@ namespace EdgePcConfigurationApp.ViewModels
         }
 
         [RelayCommand]
-        private void DisconnectFromCamera()
+        public void DisconnectFromCamera()
         {
             try
             {
@@ -234,6 +235,15 @@ namespace EdgePcConfigurationApp.ViewModels
                     ObservableCollection<Tag> children = new ObservableCollection<Tag>(tag.Children);
                     SetTagBrowserConfiguration(children, searchParams); //mmmm recursion 
                 }
+            }
+        }
+
+        public static void DisconnectFromAllDevices(ObservableCollection<CognexCamera> deviceList)
+        {
+            foreach(CognexCamera camera in deviceList)
+            {
+                camera.Tags.Clear();
+                camera.Session.Dispose();
             }
         }
         public async void UpdateTagBrowser()

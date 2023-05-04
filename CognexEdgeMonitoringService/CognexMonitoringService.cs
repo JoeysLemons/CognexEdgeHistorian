@@ -18,7 +18,6 @@ namespace CognexEdgeMonitoringService
 {
     public partial class CognexMonitoringService : ServiceBase
     {
-        XmlDocument ServiceConfig = new XmlDocument();
         string ConfigFilePath = Path.Combine(Directory.GetCurrentDirectory(), "ServiceConfig.xml");
         private bool isRunning = false;
         private Thread edgeMonitoringThread = null;
@@ -33,17 +32,18 @@ namespace CognexEdgeMonitoringService
             edgeMonitoringThread = new Thread(EdgeMonitoringWorker);
             edgeMonitoringThread.Start();
         }
-
+        public void OnDebug()
+        {
+            OnStart(null);
+        }
         protected override void OnStop()
         {
         }
-        private void LoadConfigFile()
+        private XmlDocument LoadConfigFile()
         {
-            ServiceConfig.Load(ConfigFilePath);
-        }
-        private XmlNodeList GetCameraNodes()
-        {
-            return ServiceConfig.SelectNodes("/configuration/CognexCameras/*");
+            XmlDocument config = new XmlDocument();
+            config.Load(ConfigFilePath);
+            return config;
         }
         private List<Tag> MonitoredTagsConverter(XmlNodeList nodeList)
         {
@@ -62,37 +62,45 @@ namespace CognexEdgeMonitoringService
 
         private async void EdgeMonitoringWorker()
         {
-            while(isRunning)
+            XmlDocument serviceConfig = LoadConfigFile();
+            string location = string.Empty;
+            try
             {
-                LoadConfigFile();
-                XmlNodeList cameras = GetCameraNodes();
+                string connectionString = GetXmlNode(serviceConfig, "//ConnectionString").InnerText;
+                location = GetXmlNode(serviceConfig, "//Location").InnerText;
 
-                List<CognexSession> cognexSessions = new List<CognexSession>();
-                foreach (XmlNode cam in cameras)
-                {
-                    var config = OPCUAUtils.CreateApplicationConfiguration();   //Create OPC UA App Config
-                    await OPCUAUtils.InitializeApplication();   //Init OPC App 
-                    Session session = await OPCUAUtils.ConnectToServer(config, $"opc.tcp://{cam.Attributes["endpoint"].Value}"); //Connect to OPC UA server and create session instance
-                    CognexSession cameraSession = new CognexSession(session, cam.Attributes["endpoint"].Value, cam.Attributes["name"].Value);   //Create an instance of a Cognex camera session and bind the session instance to it
-                    XmlNodeList MonitoredTags = cam.SelectNodes("/MonitoredTags/*");    //read from the config file to see which tags this camera needs monitored
-                    cameraSession.Tags = MonitoredTagsConverter(MonitoredTags);         //Convert the xml monitored tag items to a list of Tag objects on the Cognex Camera Session
-                    OPCUAUtils.CreateSubscription(cameraSession.Session);               //Create a new OPC UA Subscription
-                    foreach(Tag tag in cameraSession.Tags)                              //Loop over all the tags in the Cognex camera tags list and add them to the subscription
-                    {
-                        try
-                        {
-                            OPCUAUtils.AddMonitoredItem(cameraSession.Subscription, tag.NodeId, OPCUAUtils.OnTagValueChanged);  //add monitored item to subscription
-                        }
-                        catch (Exception ex)
-                        {
-                            TagNotFoundErrorHandler(tag.Name, tag.NodeId, ex.Message);
-                        }
-                    }
-                        
-                    cognexSessions.Add(cameraSession);  //add current Cognex Session to list of all open cognex sessions
-                }
-                
+                DatabaseUtils.ConnectionString = connectionString;
             }
+            catch (NullReferenceException ex)
+            {
+                Trace.WriteLine($"Failed to find connection string or location, node path may be incorrect. Error Message: {ex.Message}");
+            }
+
+            LoadServiceSettings(location);
+        }
+
+        private void LoadServiceSettings(string location)
+        {
+            int locationId = DatabaseUtils.GetLocationId(location);
+            if (locationId == -1)
+            {
+                //!Do some error handling here
+            }
+            int cameraId = DatabaseUtils.GetCameraIdFromLocationId(locationId);
+            if (cameraId == -1)
+            {
+                //!Do some error handling here
+            }
+            List<string> tags = DatabaseUtils.GetTags(cameraId);
+        }
+
+        private XmlNode GetXmlNode(XmlDocument doc, string nodePath)
+        {
+            return doc.SelectSingleNode(nodePath);
+        }
+        private XmlNodeList GetXmlNodeList(XmlDocument doc, string nodePath)
+        {
+            return doc.SelectNodes(nodePath);
         }
     }
 }
