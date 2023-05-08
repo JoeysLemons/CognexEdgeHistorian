@@ -137,6 +137,18 @@ namespace CognexEdgeMonitoringService.Core
             return subscription;
         }
 
+        public static Subscription CreateEventSubscription(Session session)
+        {
+            Subscription subscription = new Subscription(session.DefaultSubscription)
+            {
+                PublishingInterval = 0,
+                LifetimeCount = 1000,
+                MaxNotificationsPerPublish = 1000,
+                Priority = 0
+            };
+            return subscription;
+        }
+
         public static void AddMonitoredItem(Subscription subscription, string nodeId, MonitoredItemNotificationEventHandler callback)
         {
             MonitoredItem monitoredItem = new MonitoredItem(subscription.DefaultItem)

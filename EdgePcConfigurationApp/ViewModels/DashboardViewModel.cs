@@ -30,7 +30,7 @@ namespace EdgePcConfigurationApp.ViewModels
         private CognexCamera? selectedCamera;
 
         private ObservableCollection<Tag> _tags;
-        private bool changesSaved { get; set; } = true;
+        private static bool changesSaved { get; set; } = true;
 
         public ObservableCollection<Tag> Tags
         {
@@ -130,6 +130,7 @@ namespace EdgePcConfigurationApp.ViewModels
                 {
                     throw new NullReferenceException();
                 }
+                selectedItem.Synced = false;
                 if (selectedItem.IsChecked)
                 {
                     selectedCamera.SubscribedTags.Add(selectedItem);
@@ -138,7 +139,6 @@ namespace EdgePcConfigurationApp.ViewModels
                 {
                     selectedCamera.SubscribedTags.Remove(selectedItem);
                 }
-                
             }
             catch (NullReferenceException ex)
             {
@@ -161,10 +161,19 @@ namespace EdgePcConfigurationApp.ViewModels
             {
                 tag.TagId = DatabaseUtils.AddTag(selectedCamera.CameraID, tag.Name, tag.NodeId);
             }
+            ResetSyncIcons(Tags);
         }
         #endregion RelayCommands
 
-
+        public void ResetSyncIcons(ObservableCollection<Tag> tagList)
+        {
+            foreach(Tag tag in tagList)
+            {
+                tag.Synced = true;
+                ObservableCollection<Tag> children = new ObservableCollection<Tag>(tag.Children);
+                ResetSyncIcons(children);
+            }
+        }
 
 
         public async Task<ObservableCollection<Tag>> BrowseChildren(Session session, ReferenceDescriptionCollection references)

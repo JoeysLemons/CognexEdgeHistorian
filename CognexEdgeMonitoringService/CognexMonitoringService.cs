@@ -79,7 +79,7 @@ namespace CognexEdgeMonitoringService
             LoadServiceSettings(location);
         }
 
-        private void LoadServiceSettings(string location)
+        private List<string> LoadServiceSettings(string location)
         {
             int locationId = DatabaseUtils.GetLocationId(location);
             if (locationId == -1)
@@ -92,6 +92,12 @@ namespace CognexEdgeMonitoringService
                 //!Do some error handling here
             }
             List<string> tags = DatabaseUtils.GetTags(cameraId);
+            return tags;
+        }
+
+        private void SubscribeToTags(List<string> nodeIds)
+        {
+
         }
 
         private XmlNode GetXmlNode(XmlDocument doc, string nodePath)

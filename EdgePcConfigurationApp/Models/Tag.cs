@@ -10,6 +10,9 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media;
+using Wpf.Ui.Appearance;
+using Color = System.Drawing.Color;
 
 namespace EdgePcConfigurationApp.Models
 {
@@ -31,8 +34,38 @@ namespace EdgePcConfigurationApp.Models
 		} = new List<Tag>();
 
 		public bool IsChecked { get; set; } = false;
+		private bool _synced;
 
-		public string NodeId { get; set; }
+		public bool Synced
+		{
+			get { return _synced; }
+			set
+			{
+				_synced = value;
+				SetSyncIcon();
+			}
+		}
+
+        private void SetSyncIcon()
+        {
+			if (Synced)
+				SyncIcon = "/Assets/icons8-done-48.png";
+			else
+				SyncIcon = "/Assets/icons8-no-synchronize-48.png";
+        }
+		private string _syncIcon;
+
+		public string SyncIcon
+        {
+			get { return _syncIcon; }
+			set 
+			{
+				_syncIcon = value;
+				OnPropertyChanged(nameof(SyncIcon));
+			} 
+		}
+
+        public string NodeId { get; set; }
 		public string CameraName { get; set; }
 		public string Timestamp { get; set; }
 		private string _browseName;
@@ -40,7 +73,6 @@ namespace EdgePcConfigurationApp.Models
 		{
 			get { return _browseName; }
 		}
-
 		public void SetBrowseName(string browseName)
 		{
 			_browseName = browseName;
@@ -51,6 +83,7 @@ namespace EdgePcConfigurationApp.Models
 			Name = name;
 			NodeId = id;
 			CameraName = cameraName;
-		}
+			SyncIcon = "/Assets/icons8-done-48.png";
+        }
     }
 }
