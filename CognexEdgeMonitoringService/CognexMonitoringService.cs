@@ -76,28 +76,56 @@ namespace CognexEdgeMonitoringService
                 Trace.WriteLine($"Failed to find connection string or location, node path may be incorrect. Error Message: {ex.Message}");
             }
 
-            LoadServiceSettings(location);
+            var locationId = GetLocationId(location);
+            List<int> cameraIds = GetCameraId(locationId);
+            List<CognexSession> sessions = new List<CognexSession>();
+
+            foreach(int id in cameraIds)
+            {
+                string endpoint = DatabaseUtils.GetCameraEndpointFromId(id);
+
+                var opcConfig = OPCUAUtils.CreateApplicationConfiguration();
+                await OPCUAUtils.InitializeApplication();
+                Session session = await OPCUAUtils.ConnectToServer(opcConfig, $"opc.tcp://{endpoint}:4840");
+                CognexSession cognexSession = new CognexSession(session, endpoint, session.SessionName, id);
+                cognexSession.Tags = DatabaseUtils.GetTags(id);
+                sessions.Add(cognexSession);
+            }
         }
 
-        private List<string> LoadServiceSettings(string location)
+        private List<string> LoadServiceSettings(int cameraId)
+        {
+            List<string> tags = DatabaseUtils.GetTags(cameraId);
+            return tags;
+        }
+        
+        public int GetLocationId(string location)
         {
             int locationId = DatabaseUtils.GetLocationId(location);
             if (locationId == -1)
             {
                 //!Do some error handling here
             }
-            int cameraId = DatabaseUtils.GetCameraIdFromLocationId(locationId);
-            if (cameraId == -1)
+            return locationId;
+        }
+
+        public List<int> GetCameraId(int locationId)
+        {
+            List<int> cameraIds = DatabaseUtils.GetCameraIdFromLocationId(locationId);
+            if (cameraIds == null)
             {
                 //!Do some error handling here
             }
-            List<string> tags = DatabaseUtils.GetTags(cameraId);
-            return tags;
+            return cameraIds;
         }
-
-        private void SubscribeToTags(List<string> nodeIds)
+        public List<string> GetCameraEndpoints(int locationId)
         {
-
+            List<string> endpoints = DatabaseUtils.GetCameraEndpointsFromLocationId(locationId);
+            if (endpoints == null)
+            {
+                //!Do some error handling here
+            }
+            return endpoints;
         }
 
         private XmlNode GetXmlNode(XmlDocument doc, string nodePath)

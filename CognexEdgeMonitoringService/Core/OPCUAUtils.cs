@@ -172,6 +172,29 @@ namespace CognexEdgeMonitoringService.Core
             subscription.ApplyChanges();
         }
 
+        public static void AddEventDrivenMonitoredItem(Subscription subscription, string nodeId, MonitoredItemNotificationEventHandler callback)
+        {
+            MonitoredItem monitoredItem = new MonitoredItem(subscription.DefaultItem)
+            {
+                DisplayName = nodeId,
+                StartNodeId = new NodeId(nodeId),
+                AttributeId = Attributes.Value,
+                MonitoringMode = MonitoringMode.Reporting,
+                SamplingInterval = -1, // Set the desired sampling interval (in milliseconds)
+                QueueSize = 1,
+                DiscardOldest = true
+            };
+
+            // Set the callback for value changes
+            monitoredItem.Notification += callback;
+
+            // Add the monitored item to the subscription
+            subscription.AddItem(monitoredItem);
+
+            // Apply the changes on the server
+            subscription.ApplyChanges();
+        }
+
         public static void RemoveMonitoredItem(Subscription subscription, string nodeId)
         {
             MonitoredItem monitoredItem = subscription.MonitoredItems.FirstOrDefault(item => item.StartNodeId.ToString() == nodeId);

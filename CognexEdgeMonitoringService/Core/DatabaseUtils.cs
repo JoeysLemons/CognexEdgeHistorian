@@ -252,9 +252,9 @@ namespace CognexEdgeMonitoringService.Core
             return locationId;
         }
 
-        public static int GetCameraIdFromLocationId(int locationId)
+        public static List<int> GetCameraIdFromLocationId(int locationId)
         {
-            int cameraId = -1;
+            List<int> cameraIds = null;
             using (SqlConnection connection = new SqlConnection(ConnectionString))
             {
                 string query = @"SELECT id FROM Cameras WHERE Location_id = @Location_id";
@@ -265,12 +265,56 @@ namespace CognexEdgeMonitoringService.Core
                     {
                         if (reader.Read())
                         {
-                            cameraId = reader.GetInt32(0);
+                            cameraIds.Add(reader.GetInt32(0)); 
                         }
                     }
                 }
             }
-            return cameraId;
+            return cameraIds;
+        }
+
+        public static List<string> GetCameraEndpointsFromLocationId(int locationId)
+        {
+            List<string> endpoints = null;
+            using (SqlConnection connection = new SqlConnection(ConnectionString))
+            {
+                string query = @"SELECT endpoints FROM Cameras WHERE Location_id = @Location_id";
+                using (SqlCommand command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@Location_id", locationId);
+                    using (SqlDataReader reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            endpoints.Add(reader.GetString(reader.GetOrdinal("Endpoint")));
+                        }
+                    }
+                }
+            }
+
+            return endpoints;
+        }
+
+        public static string GetCameraEndpointFromId(int id)
+        {
+            string endpoint = string.Empty;
+            using (SqlConnection connection = new SqlConnection(ConnectionString))
+            {
+                string query = @"SELECT endpoints FROM Cameras WHERE id = @id";
+                using (SqlCommand command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@id", id);
+                    using (SqlDataReader reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                           endpoint = reader.GetString(reader.GetOrdinal("Endpoint"));
+                        }
+                    }
+                }
+            }
+
+            return endpoint;
         }
 
         public static List<string> GetTags(int cameraId)

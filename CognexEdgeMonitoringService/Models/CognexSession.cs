@@ -11,17 +11,19 @@ namespace CognexEdgeMonitoringService.Models
     public class CognexSession
     {
         public Session Session { get; }
+        public int ID { get; }
         public string Endpoint { get; }
         public string SessionName { get; }
-        public List<Tag> Tags { get; set; }
+        public List<string> Tags { get; set; }
         public ReferenceDescriptionCollection References { get; set; }
         public Subscription Subscription { get; set; }
 
-        public CognexSession(Session session, string endpoint, string sessionName)
+        public CognexSession(Session session, string endpoint, string sessionName, int id)
         {
             SessionName = sessionName;
             Endpoint = endpoint;
             Session = session;
+            ID = id;
         }
     }
 }
