@@ -6,11 +6,9 @@ using System.IO;
 using System.Threading;
 using Opc.Ua.Client;
 using System.Collections.Generic;
-using Opc.Ua.Server;
 using Opc.Ua;
 using System.Net;
 using System;
-using Session = Opc.Ua.Client.Session;
 using System.Threading.Tasks;
 using System.Diagnostics;
 
@@ -21,6 +19,7 @@ namespace CognexEdgeMonitoringService
         string ConfigFilePath = Path.Combine(Directory.GetCurrentDirectory(), "ServiceConfig.xml");
         private bool isRunning = false;
         private Thread edgeMonitoringThread = null;
+        private string countNodeId = "";
         public CognexMonitoringService()
         {
             InitializeComponent();
@@ -88,17 +87,22 @@ namespace CognexEdgeMonitoringService
                 await OPCUAUtils.InitializeApplication();
                 Session session = await OPCUAUtils.ConnectToServer(opcConfig, $"opc.tcp://{endpoint}:4840");
                 CognexSession cognexSession = new CognexSession(session, endpoint, session.SessionName, id);
-                cognexSession.Tags = DatabaseUtils.GetTags(id);
+                cognexSession.NodeIds = DatabaseUtils.GetTags(id);
+                cognexSession.Subscription = OPCUAUtils.CreateEventSubscription(cognexSession.Session);
+                OPCUAUtils.AddEventDrivenMonitoredItem(cognexSession.Subscription, countNodeId, OnTriggerCountChanged);
                 sessions.Add(cognexSession);
             }
         }
 
-        private List<string> LoadServiceSettings(int cameraId)
+        public void OnTriggerCountChanged(MonitoredItem monitored, MonitoredItemNotificationEventArgs e)
         {
-            List<string> tags = DatabaseUtils.GetTags(cameraId);
-            return tags;
+            MonitoredItemNotification notification = e.NotificationValue as MonitoredItemNotification;
+            if (notification == null) return;
+
+            ReadValueIdCollection nodesToReadCollection = new ReadValueIdCollection();
+            //! Need to figure out how to pass in the list of nodes to read here
         }
-        
+
         public int GetLocationId(string location)
         {
             int locationId = DatabaseUtils.GetLocationId(location);
@@ -117,15 +121,6 @@ namespace CognexEdgeMonitoringService
                 //!Do some error handling here
             }
             return cameraIds;
-        }
-        public List<string> GetCameraEndpoints(int locationId)
-        {
-            List<string> endpoints = DatabaseUtils.GetCameraEndpointsFromLocationId(locationId);
-            if (endpoints == null)
-            {
-                //!Do some error handling here
-            }
-            return endpoints;
         }
 
         private XmlNode GetXmlNode(XmlDocument doc, string nodePath)

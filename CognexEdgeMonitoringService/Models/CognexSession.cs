@@ -14,7 +14,8 @@ namespace CognexEdgeMonitoringService.Models
         public int ID { get; }
         public string Endpoint { get; }
         public string SessionName { get; }
-        public List<string> Tags { get; set; }
+        public List<Tag> Tags { get; set; }
+        public List<string> NodeIds { get; set; }
         public ReferenceDescriptionCollection References { get; set; }
         public Subscription Subscription { get; set; }
 
