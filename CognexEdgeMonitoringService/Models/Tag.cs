@@ -11,6 +11,7 @@ namespace CognexEdgeMonitoringService.Models
     public class Tag
     {
 		public string Name { get; set; }
+		public int ID { get; set; }
 		public int UpdateRate { get; set; }
 		public bool LimitChecking { get; }
 		public bool PassFail { get; }
@@ -34,10 +35,10 @@ namespace CognexEdgeMonitoringService.Models
 		}
 
 
-		public Tag(string name, string id)
+		public Tag(string name, string nodeId)
 		{
 			Name = name;
-			NodeId = id;
+			NodeId = nodeId;
 		}
     }
 }

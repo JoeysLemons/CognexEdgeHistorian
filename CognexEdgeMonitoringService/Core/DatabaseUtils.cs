@@ -1,9 +1,11 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using CognexEdgeMonitoringService.Models;
+using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Sql;
 using System.Data.SqlClient;
+using System.Diagnostics;
 
 namespace CognexEdgeMonitoringService.Core
 {
@@ -197,7 +199,7 @@ namespace CognexEdgeMonitoringService.Core
 
         public static List<string> GetSavedTagConfiguration(string endpoint)
         {
-            string queryString = "SELECT id FROM Cameras WHERE Endpoint = @Endpoint;";
+            string queryString = @"SELECT id FROM Cameras WHERE Endpoint = @Endpoint;";
             int cameraId = -1;
             SqlCommand command = new SqlCommand(queryString, Connection);
             command.Parameters.AddWithValue("@Endpoint", endpoint);
@@ -317,22 +319,29 @@ namespace CognexEdgeMonitoringService.Core
             return endpoint;
         }
 
-        public static List<string> GetTags(int cameraId)
+        public static List<Tag> GetTags(int cameraId)
         {
-            List<string> tags = new List<string>();
+            List<Tag> tags = new List<Tag>();
+            DataTable tagsTable = new DataTable();
             using (SqlConnection connection = new SqlConnection(ConnectionString))
             {
-                string query = @"SELECT Node_id FROM MonitoredTags WHERE Camera_id = @Camera_id";
+                string query = @"SELECT Name, Node_id, id FROM MonitoredTags WHERE Camera_id = @Camera_id";
                 using (SqlCommand command = new SqlCommand(query, connection))
                 {
                     command.Parameters.AddWithValue("@Camera_id", cameraId);
-                    using (SqlDataReader reader = command.ExecuteReader())
+                    using (SqlDataAdapter adapter = new SqlDataAdapter(command))
                     {
-                        while (reader.Read())
-                        {
-                            string nodeId = reader.GetString(reader.GetOrdinal("Node_id"));
-                            tags.Add(nodeId);
-                        }
+                        adapter.Fill(tagsTable);
+                    }
+
+                    foreach (DataRow row in tagsTable.Rows)
+                    {
+                        string name = (string)row["Name"];
+                        int id = (int)row["id"];
+                        string nodeId = (string)row["Node_id"];
+                        Tag tag = new Tag(name, nodeId);
+                        tag.ID = id;
+                        tags.Add(tag);
                     }
                 }
             }

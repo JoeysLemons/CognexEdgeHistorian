@@ -9,6 +9,8 @@ using Opc.Ua.Configuration;
 using Opc.Ua;
 using System.Diagnostics;
 using CognexEdgeMonitoringService.Models;
+using System.Threading;
+using System.Data.SqlClient;
 
 namespace CognexEdgeMonitoringService.Core
 {
@@ -172,7 +174,7 @@ namespace CognexEdgeMonitoringService.Core
             subscription.ApplyChanges();
         }
 
-        public static void AddEventDrivenMonitoredItem(Subscription subscription, string nodeId, MonitoredItemNotificationEventHandler callback)
+        public static void AddEventDrivenMonitoredItem(Subscription subscription, string nodeId, List<Tag> tags)
         {
             MonitoredItem monitoredItem = new MonitoredItem(subscription.DefaultItem)
             {
@@ -186,7 +188,45 @@ namespace CognexEdgeMonitoringService.Core
             };
 
             // Set the callback for value changes
-            monitoredItem.Notification += callback;
+            monitoredItem.Notification += async (item, args) => 
+            {
+                // Read the values of the other nodes
+                ReadValueIdCollection nodesToReadCollection = new ReadValueIdCollection();
+                foreach (Tag tag in tags)
+                {
+                    try
+                    {
+                        ReadResponse response = await subscription.Session.ReadAsync(
+                                    null,
+                                    0,
+                                    TimestampsToReturn.Both,
+                                    new ReadValueIdCollection
+                                    {
+                        new ReadValueId()
+                        {
+                            NodeId = tag.NodeId,
+                            AttributeId = Attributes.Value,
+                        }
+                                    },
+                                    CancellationToken.None);
+
+                        try
+                        {
+                            DatabaseUtils.StoreTagValue(tag.ID, response.Results[0].Value.ToString(), response.Results[0].SourceTimestamp.ToString());
+                        }
+                        catch (SqlException ex)
+                        {
+                            Trace.WriteLine($"Error while writing values to the database. Error Message: {ex.Message}");
+                            return;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Trace.WriteLine($"Something went wrong while monitoring tag values. Error Message: {ex.Message}");
+                        return;
+                    }
+                }
+            };
 
             // Add the monitored item to the subscription
             subscription.AddItem(monitoredItem);
@@ -224,7 +264,15 @@ namespace CognexEdgeMonitoringService.Core
             DataValue value = notification.Value;
             Console.WriteLine($"Tag: {monitoredItem.DisplayName}, Value: {value.Value}, Timestamp: {value.SourceTimestamp}");
 
-            DatabaseUtils.StoreTagValue(ConvertNodeIdToInteger(monitoredItem.DisplayName), value.Value.ToString(), value.SourceTimestamp.ToString());
+            try
+            {
+                DatabaseUtils.StoreTagValue(ConvertNodeIdToInteger(monitoredItem.DisplayName), value.Value.ToString(), value.SourceTimestamp.ToString());
+            }
+            catch (SqlException ex)
+            {
+                Trace.WriteLine($"Error while writing values to the database. Error Message: {ex.Message}");
+                return;
+            }
         }
 
         private static int ConvertNodeIdToInteger(string nodeId)

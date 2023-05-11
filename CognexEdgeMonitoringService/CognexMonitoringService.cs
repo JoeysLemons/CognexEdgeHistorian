@@ -44,15 +44,7 @@ namespace CognexEdgeMonitoringService
             config.Load(ConfigFilePath);
             return config;
         }
-        private List<Tag> MonitoredTagsConverter(XmlNodeList nodeList)
-        {
-            List<Tag> tags = new List<Tag>();
-            foreach (XmlNode node in nodeList)
-            {
-                tags.Add(new Tag(node.Attributes["name"].Value, node.Attributes["nodeID"].Value));
-            }
-            return tags;
-        }
+
         public void TagNotFoundErrorHandler(string name, string nodeId, string errMsg)
         {
             // write to database name of the tag that was not able to be subscribed to
@@ -87,20 +79,11 @@ namespace CognexEdgeMonitoringService
                 await OPCUAUtils.InitializeApplication();
                 Session session = await OPCUAUtils.ConnectToServer(opcConfig, $"opc.tcp://{endpoint}:4840");
                 CognexSession cognexSession = new CognexSession(session, endpoint, session.SessionName, id);
-                cognexSession.NodeIds = DatabaseUtils.GetTags(id);
+                cognexSession.Tags = DatabaseUtils.GetTags(cognexSession.ID);
                 cognexSession.Subscription = OPCUAUtils.CreateEventSubscription(cognexSession.Session);
-                OPCUAUtils.AddEventDrivenMonitoredItem(cognexSession.Subscription, countNodeId, OnTriggerCountChanged);
+                OPCUAUtils.AddEventDrivenMonitoredItem(cognexSession.Subscription, countNodeId, cognexSession.Tags);
                 sessions.Add(cognexSession);
             }
-        }
-
-        public void OnTriggerCountChanged(MonitoredItem monitored, MonitoredItemNotificationEventArgs e)
-        {
-            MonitoredItemNotification notification = e.NotificationValue as MonitoredItemNotification;
-            if (notification == null) return;
-
-            ReadValueIdCollection nodesToReadCollection = new ReadValueIdCollection();
-            //! Need to figure out how to pass in the list of nodes to read here
         }
 
         public int GetLocationId(string location)
