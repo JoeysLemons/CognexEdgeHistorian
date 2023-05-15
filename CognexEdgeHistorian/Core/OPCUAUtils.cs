@@ -124,7 +124,7 @@ namespace CognexEdgeHistorian.Core
             // Create a subscription
             Subscription subscription = new Subscription(session.DefaultSubscription)
             {
-                PublishingInterval = 1000, // Set the desired publishing interval (in milliseconds)
+                PublishingInterval = 50, // Set the desired publishing interval (in milliseconds)
                 PublishingEnabled = true
             };
 
@@ -143,7 +143,7 @@ namespace CognexEdgeHistorian.Core
                 StartNodeId = new NodeId(nodeId),
                 AttributeId = Attributes.Value,
                 MonitoringMode = MonitoringMode.Reporting,
-                SamplingInterval = 1000, // Set the desired sampling interval (in milliseconds)
+                SamplingInterval = 50, // Set the desired sampling interval (in milliseconds)
                 QueueSize = 1,
                 DiscardOldest = true
             };
@@ -187,7 +187,8 @@ namespace CognexEdgeHistorian.Core
             DataValue value = notification.Value;
             Console.WriteLine($"Tag: {monitoredItem.DisplayName}, Value: {value.Value}, Timestamp: {value.SourceTimestamp}");
 
-            DatabaseUtils.StoreTagValue(ConvertNodeIdToInteger(monitoredItem.DisplayName), value.Value.ToString(), value.SourceTimestamp.ToString());
+            Console.WriteLine(value.Value.ToString());
+            //DatabaseUtils.StoreTagValue(ConvertNodeIdToInteger(monitoredItem.DisplayName), value.Value.ToString(), value.SourceTimestamp.ToString());
         }
 
         private static int ConvertNodeIdToInteger(string nodeId)

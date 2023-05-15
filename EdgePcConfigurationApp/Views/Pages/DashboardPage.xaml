@@ -17,7 +17,6 @@
 
     <ui:UiPage.Resources>
         <Color x:Key="TextOnAccentFillColorPrimary">#FFFF</Color>
-        <Color x:Key="SystemAccentColorSecondary">#6D57D5</Color>
     </ui:UiPage.Resources>
     <Grid>
         <Grid.ColumnDefinitions>

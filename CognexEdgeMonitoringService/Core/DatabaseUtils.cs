@@ -238,8 +238,9 @@ namespace CognexEdgeMonitoringService.Core
             int locationId = -1;
             using (SqlConnection connection = new SqlConnection(ConnectionString))
             {
+                connection.Open();
                 string query = @"SELECT id FROM Locations WHERE Name = @Location";
-                using (SqlCommand command = new SqlCommand(query, Connection))
+                using (SqlCommand command = new SqlCommand(query, connection))
                 {
                     command.Parameters.AddWithValue("@Location", location);
                     using(SqlDataReader reader = command.ExecuteReader())
@@ -259,6 +260,7 @@ namespace CognexEdgeMonitoringService.Core
             List<int> cameraIds = null;
             using (SqlConnection connection = new SqlConnection(ConnectionString))
             {
+                connection.Open();
                 string query = @"SELECT id FROM Cameras WHERE Location_id = @Location_id";
                 using (SqlCommand command = new SqlCommand(query, connection))
                 {

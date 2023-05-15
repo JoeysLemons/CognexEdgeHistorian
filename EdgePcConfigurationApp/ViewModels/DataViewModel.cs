@@ -1,7 +1,9 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using EdgePcConfigurationApp.Models;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Windows.Media;
 using Wpf.Ui.Common.Interfaces;
 
@@ -9,39 +11,22 @@ namespace EdgePcConfigurationApp.ViewModels
 {
     public partial class DataViewModel : ObservableObject, INavigationAware
     {
-        private bool _isInitialized = false;
+        public void OnNavigatedTo(){}
+        public void OnNavigatedFrom(){}
 
         [ObservableProperty]
-        private IEnumerable<DataColor> _colors;
+        private string? connectionString;
+        [ObservableProperty]
+        private string? location;
+        [ObservableProperty]
+        private string? acquisitionCountNodeID;
 
-        public void OnNavigatedTo()
+
+        [RelayCommand]
+        public void SaveServiceConfig()
         {
-            if (!_isInitialized)
-                InitializeViewModel();
-        }
-
-        public void OnNavigatedFrom()
-        {
-        }
-
-        private void InitializeViewModel()
-        {
-            var random = new Random();
-            var colorCollection = new List<DataColor>();
-
-            for (int i = 0; i < 8192; i++)
-                colorCollection.Add(new DataColor
-                {
-                    Color = new SolidColorBrush(Color.FromArgb(
-                        (byte)200,
-                        (byte)random.Next(0, 250),
-                        (byte)random.Next(0, 250),
-                        (byte)random.Next(0, 250)))
-                });
-
-            Colors = colorCollection;
-
-            _isInitialized = true;
+            //Write textbox values to EdgeMonitoringService app.config
+            Trace.WriteLine($"Database Connection String: {connectionString}\nLocation: {location}\nAcquisition Node ID: {acquisitionCountNodeID}");
         }
     }
 }

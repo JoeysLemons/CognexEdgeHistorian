@@ -3,6 +3,7 @@ using EdgePcConfigurationApp.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using System.Drawing;
 using System.IO;
 using System.Reflection;
 using System.Windows;
@@ -75,6 +76,7 @@ namespace EdgePcConfigurationApp
         private async void OnStartup(object sender, StartupEventArgs e)
         {
             await _host.StartAsync();
+            Wpf.Ui.Appearance.Accent.Apply(Wpf.Ui.Appearance.Accent.SystemAccent, Wpf.Ui.Appearance.Accent.PrimaryAccent, System.Windows.Media.Color.FromRgb(109, 87, 213), Wpf.Ui.Appearance.Accent.TertiaryAccent);
         }
 
         /// <summary>

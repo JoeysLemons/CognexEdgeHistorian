@@ -6,6 +6,7 @@ using System.IO;
 using System.Threading;
 using Opc.Ua.Client;
 using System.Collections.Generic;
+using System.Configuration;
 using Opc.Ua;
 using System.Net;
 using System;
@@ -16,10 +17,12 @@ namespace CognexEdgeMonitoringService
 {
     public partial class CognexMonitoringService : ServiceBase
     {
-        string ConfigFilePath = Path.Combine(Directory.GetCurrentDirectory(), "ServiceConfig.xml");
+        string ConfigFilePath = Path.Combine(Directory.GetCurrentDirectory(), "ServiceConfig.config");
         private bool isRunning = false;
         private Thread edgeMonitoringThread = null;
-        private string countNodeId = "";
+        private string countNodeId;
+        public ExeConfigurationFileMap fileMap = new ExeConfigurationFileMap();
+        public Configuration serviceConfig;
         public CognexMonitoringService()
         {
             InitializeComponent();
@@ -28,6 +31,8 @@ namespace CognexEdgeMonitoringService
         protected override void OnStart(string[] args)
         {
             isRunning= true;
+            fileMap.ExeConfigFilename = @"ServiceConfig.config";
+            serviceConfig = ConfigurationManager.OpenMappedExeConfiguration(fileMap, ConfigurationUserLevel.None);
             edgeMonitoringThread = new Thread(EdgeMonitoringWorker);
             edgeMonitoringThread.Start();
         }
@@ -38,12 +43,6 @@ namespace CognexEdgeMonitoringService
         protected override void OnStop()
         {
         }
-        private XmlDocument LoadConfigFile()
-        {
-            XmlDocument config = new XmlDocument();
-            config.Load(ConfigFilePath);
-            return config;
-        }
 
         public void TagNotFoundErrorHandler(string name, string nodeId, string errMsg)
         {
@@ -53,14 +52,12 @@ namespace CognexEdgeMonitoringService
 
         private async void EdgeMonitoringWorker()
         {
-            XmlDocument serviceConfig = LoadConfigFile();
             string location = string.Empty;
             try
             {
-                string connectionString = GetXmlNode(serviceConfig, "//ConnectionString").InnerText;
-                location = GetXmlNode(serviceConfig, "//Location").InnerText;
-
-                DatabaseUtils.ConnectionString = connectionString;
+                location = ConfigurationManager.AppSettings["Location"]; //Get Location from config
+                DatabaseUtils.ConnectionString = ConfigurationManager.ConnectionStrings["MainConnectionString"].ConnectionString;   //Get connection string from config
+                countNodeId = ConfigurationManager.AppSettings["CountNodeId"];
             }
             catch (NullReferenceException ex)
             {

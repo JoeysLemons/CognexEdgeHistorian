@@ -100,12 +100,13 @@ namespace EdgePcConfigurationApp.Helpers
 
         public static int AddTag(int cameraId, string tagName, string nodeId)
         {
-            string insertTag = "INSERT INTO MonitoredTags (Camera_id, Name, Node_id) VALUES (@cameraId, @tagName, @nodeId); SELECT SCOPE_IDENTITY();";
+            string insertTag = "INSERT INTO MonitoredTags (Camera_id, Name, Node_id, Monitored) VALUES (@cameraId, @tagName, @nodeId, @monitored); SELECT SCOPE_IDENTITY();";
             using (SqlCommand command = new SqlCommand(insertTag, SqlConnection))
             {
                 command.Parameters.AddWithValue("@cameraId", cameraId);
                 command.Parameters.AddWithValue("@tagName", tagName);
                 command.Parameters.AddWithValue("@nodeId", nodeId);
+                command.Parameters.AddWithValue("@monitored", 1);
                 int newTagId = Convert.ToInt32(command.ExecuteScalar());
                 return newTagId;
             }

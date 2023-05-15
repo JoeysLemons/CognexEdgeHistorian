@@ -197,22 +197,23 @@ namespace CognexEdgeMonitoringService.Core
                     try
                     {
                         ReadResponse response = await subscription.Session.ReadAsync(
-                                    null,
-                                    0,
-                                    TimestampsToReturn.Both,
-                                    new ReadValueIdCollection
-                                    {
-                        new ReadValueId()
-                        {
-                            NodeId = tag.NodeId,
-                            AttributeId = Attributes.Value,
-                        }
-                                    },
-                                    CancellationToken.None);
+                            null,
+                            0,
+                            TimestampsToReturn.Both,
+                            new ReadValueIdCollection
+                            {
+                                new ReadValueId()
+                                {
+                                    NodeId = tag.NodeId,
+                                    AttributeId = Attributes.Value,
+                                }
+                            },
+                            CancellationToken.None);
 
                         try
                         {
-                            DatabaseUtils.StoreTagValue(tag.ID, response.Results[0].Value.ToString(), response.Results[0].SourceTimestamp.ToString());
+                            Console.WriteLine(response.Results[0].Value.ToString());
+                            //DatabaseUtils.StoreTagValue(tag.ID, response.Results[0].Value.ToString(), response.Results[0].SourceTimestamp.ToString());
                         }
                         catch (SqlException ex)
                         {
