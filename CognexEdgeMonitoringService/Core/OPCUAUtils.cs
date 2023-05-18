@@ -263,7 +263,7 @@ namespace CognexEdgeMonitoringService.Core
             if (notification == null) return;
 
             DataValue value = notification.Value;
-            Console.WriteLine($"Tag: {monitoredItem.DisplayName}, Value: {value.Value}, Timestamp: {value.SourceTimestamp}");
+            Console.WriteLine($"Tag: {monitoredItem.DisplayName}, Value: {value.Value}, Timestamp: {value.SourceTimestamp.ToString()}");
 
             try
             {
@@ -311,11 +311,9 @@ namespace CognexEdgeMonitoringService.Core
                         out continuationPoint,
                         out childReferences);
 
-                    if (childReferences.Count > 0)
-                    {
-                        List<Tag> childNodes = await BrowseChildren(session, childReferences);
-                        nodes.AddRange(childNodes);
-                    }
+                    if (childReferences.Count <= 0) continue;
+                    List<Tag> childNodes = await BrowseChildren(session, childReferences);
+                    nodes.AddRange(childNodes);
                 }
                 return nodes;
             }

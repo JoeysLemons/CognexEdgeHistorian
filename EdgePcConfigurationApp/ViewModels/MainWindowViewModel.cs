@@ -41,16 +41,16 @@ namespace EdgePcConfigurationApp.ViewModels
             {
                 new NavigationItem()
                 {
-                    Content = "Home",
-                    PageTag = "dashboard",
-                    Icon = SymbolRegular.Home24,
+                    Content = "Connections",
+                    PageTag = "connections",
+                    Icon = SymbolRegular.Connector24,
                     PageType = typeof(Views.Pages.DashboardPage)
                 },
                 new NavigationItem()
                 {
-                    Content = "Data",
+                    Content = "Configuration",
                     PageTag = "data",
-                    Icon = SymbolRegular.DataHistogram24,
+                    Icon = SymbolRegular.Database24,
                     PageType = typeof(Views.Pages.DataPage)
                 }
             };

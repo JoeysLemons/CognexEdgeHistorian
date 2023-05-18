@@ -28,6 +28,9 @@
     <None Remove="Assets\applicationIcon-256.png" />
     <None Remove="Assets\icons8-done-48.png" />
     <None Remove="Assets\icons8-no-synchronize-48.png" />
+    <None Include="..\CognexEdgeMonitoringService\ServiceConfig.config">
+      <Link>ServiceConfig.config</Link>
+    </None>
   </ItemGroup>
 
   <ItemGroup>
