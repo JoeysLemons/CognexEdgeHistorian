@@ -25,18 +25,40 @@ namespace EdgePcConfigurationApp.ViewModels
 {
     public partial class DashboardViewModel : ObservableObject, INavigationAware
     {
+        // Used to keep track of all the cameras currently connected
         public static ObservableCollection<CognexCamera> CognexCameras { get; set; } = new ObservableCollection<CognexCamera>();
         [ObservableProperty]
         [NotifyCanExecuteChangedFor(nameof(ConnectToCameraCommand))]
-        private string? endpoint;
+        private string? endpoint;   //Holds text that is in the IP address box
 
+        //Holds the currently selected camera
         private CognexCamera? selectedCamera;
+        public CognexCamera SelectedCamera
+        {
+            get { return selectedCamera; }
+            set
+            {
+                selectedCamera = value;
+                UpdateTagBrowser();
+            }
+        }
 
+        //Holds the collection of tags that should be currently displayed in the tag browser
         private ObservableCollection<Tag> _tags = new ObservableCollection<Tag>();
+        public ObservableCollection<Tag> Tags
+        {
+            get { return _tags; }
+            set
+            {
+                _tags = value;
+                OnPropertyChanged(nameof(Tags));
+            }
+        }
+        //! I think this could be obsolete but im too scared to remove it
         private static bool changesSaved { get; set; } = true;
 
+        //Holds the current error message that should be displayed in the error log. If this string is empty the error log is not visible
         private string errorMessage = string.Empty;
-
         public string ErrorMessage
         {
             get { return errorMessage; }
@@ -48,31 +70,15 @@ namespace EdgePcConfigurationApp.ViewModels
             }
         }
 
-
+        //Used for the BooleanToVisibilityConverter in the XAML Code. It just returns a true if the string is not empty and false if it is empty.
         public bool IsStringNotEmpty
         {
             get { return !string.IsNullOrEmpty(errorMessage); }
         }
 
-        public ObservableCollection<Tag> Tags
-        {
-            get { return _tags; }
-            set 
-            {
-                _tags = value; 
-                OnPropertyChanged(nameof(Tags));
-            }
-        }
+        
 
-        public CognexCamera SelectedCamera
-        {
-            get { return selectedCamera; }
-            set 
-            { 
-                selectedCamera = value;
-                UpdateTagBrowser();
-            }
-        }
+        //Leaving these here to implement the INavigationAware Interface. May possibly use these in the future 
         public void OnNavigatedTo() { }
         public void OnNavigatedFrom() { }
 

@@ -28,8 +28,8 @@
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
             <RowDefinition Height="75" />
-            <RowDefinition />
-            <RowDefinition Height="100" />
+            <RowDefinition/>
+            <RowDefinition Height="auto"/>
         </Grid.RowDefinitions>
         <StackPanel Grid.ColumnSpan="2" Orientation="Horizontal">
             <ui:TextBox
@@ -61,6 +61,7 @@
             x:Name="DeviceConnectionPane"
             Grid.Row="1"
             Margin="10"
+            VerticalAlignment="Stretch"
             ItemsSource="{Binding ViewModel.CognexCameras}"
             SelectedItem="{Binding ViewModel.SelectedCamera}"
             SelectionMode="Single">
@@ -77,6 +78,7 @@
             Grid.Row="1"
             Grid.Column="1"
             Margin="10"
+            VerticalAlignment="Stretch"
             CornerRadius="5">
             <ScrollViewer Focusable="True" PreviewMouseWheel="ListViewScrollViewer_PreviewMouseWheel">
                 <TreeView
