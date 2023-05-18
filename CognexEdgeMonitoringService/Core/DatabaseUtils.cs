@@ -102,7 +102,18 @@ namespace CognexEdgeMonitoringService.Core
 
         public static int AddTag(int cameraId, string tagName, string nodeId)
         {
+            string checkTagExists = "SELECT id FROM MonitoredTags WHERE Name = @tagName";
             string insertTag = "INSERT INTO MonitoredTags (Camera_id, Name, Node_id) VALUES (@cameraId, @tagName, @nodeId); SELECT SCOPE_IDENTITY();";
+            object existingTagId;
+            using (SqlCommand command = new SqlCommand(checkTagExists, Connection))
+            {
+                command.Parameters.AddWithValue("@tagName", tagName);
+                existingTagId = command.ExecuteScalar();
+            }
+            if (existingTagId != null)
+            {
+                return Convert.ToInt32(existingTagId);
+            }
             using (SqlCommand command = new SqlCommand(insertTag, Connection))
             {
                 command.Parameters.AddWithValue("@cameraId", cameraId);

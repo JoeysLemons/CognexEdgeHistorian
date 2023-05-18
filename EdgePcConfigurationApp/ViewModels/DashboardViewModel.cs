@@ -12,10 +12,13 @@ using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Input;
+using System.Windows.Media;
 using Wpf.Ui.Common.Interfaces;
+using Wpf.Ui.Controls;
 using Session = Opc.Ua.Client.Session;
 
 namespace EdgePcConfigurationApp.ViewModels
@@ -29,8 +32,27 @@ namespace EdgePcConfigurationApp.ViewModels
 
         private CognexCamera? selectedCamera;
 
-        private ObservableCollection<Tag> _tags;
+        private ObservableCollection<Tag> _tags = new ObservableCollection<Tag>();
         private static bool changesSaved { get; set; } = true;
+
+        private string errorMessage = string.Empty;
+
+        public string ErrorMessage
+        {
+            get { return errorMessage; }
+            set 
+            {
+                errorMessage = value;
+                OnPropertyChanged(nameof(ErrorMessage));
+                OnPropertyChanged(nameof(IsStringNotEmpty));
+            }
+        }
+
+
+        public bool IsStringNotEmpty
+        {
+            get { return !string.IsNullOrEmpty(errorMessage); }
+        }
 
         public ObservableCollection<Tag> Tags
         {
@@ -94,8 +116,14 @@ namespace EdgePcConfigurationApp.ViewModels
                 CognexCamera camera = new CognexCamera(session, session.SessionName, endpoint, cameraId, references);
                 CognexCameras.Add(camera);
             }
+            catch(InvalidOperationException ex)
+            {
+                ErrorMessage = "An error was encounted while attempting to communicate to the database. Please double check connection string.";
+                Trace.WriteLine($"An error was encountered while attempting to communicate with the database. \nError Message: {ex.Message}");
+            }
             catch (Exception ex)
             {
+                ErrorMessage = "We encountered an error while attempting to connect to the camera. Please double check connections and IP Address then try again.";
                 Trace.WriteLine($"Error while attempting to connect to camera. Error Message: {ex.Message}");
             }
         }
@@ -108,14 +136,17 @@ namespace EdgePcConfigurationApp.ViewModels
                 var result = CognexCameras.FirstOrDefault(s => s.Endpoint == endpoint);
                 result.Tags.Clear();
                 result.Session?.Dispose();
+                Tags.Clear();
                 CognexCameras.Remove(result);
             }
             catch (NullReferenceException)
             {
+                ErrorMessage = "Selected Camera was null or the list of cameras is empty. Please make sure you are connected to a device before attempting to disconnect";
                 Trace.WriteLine("Selected Camera was null or the list CognexCameras is empty");
             }
             catch (Exception ex)
             {
+                ErrorMessage = $"We encountered an error while attempting to disconnect from the camera. \nError Message: {ex.Message}";
                 Trace.WriteLine($"Error while attempting to disconnect from OPC UA server. \nError Message: {ex.Message}\nStack Trace: {ex.StackTrace}");
             }
         }
@@ -133,20 +164,22 @@ namespace EdgePcConfigurationApp.ViewModels
                 selectedItem.Synced = false;
                 if (selectedItem.IsChecked)
                 {
-                    selectedCamera.SubscribedTags.Add(selectedItem);
+                    SelectedCamera.SubscribedTags.Add(selectedItem);
                 }
                 else
                 {
-                    selectedCamera.SubscribedTags.Remove(selectedItem);
+                    SelectedCamera.SubscribedTags.Remove(selectedItem);
                 }
             }
             catch (NullReferenceException ex)
             {
+                ErrorMessage = $"Something went wrong while attempting to subscribe to the selected OPC UA tag. \nError Message: {ex.Message}";
                 Trace.WriteLine($"Could not convert parameter to ListBoxItem. \nError Message: {ex.Message}");
                 return;
             }
             catch (Exception ex)
             {
+                ErrorMessage = "An unknown error occured while attemping to subscribe to the selected OPC UA tag. If this error persists please contact your system administrator";
                 Trace.WriteLine($"Error while attempting to add tag to subscribtion list. \nError Message: {ex.Message}");
                 return;
             }
@@ -157,12 +190,50 @@ namespace EdgePcConfigurationApp.ViewModels
         [RelayCommand]
         public void ApplyChanges()
         {
-            foreach (Tag tag in selectedCamera.SubscribedTags)
+            try
             {
-                tag.TagId = DatabaseUtils.AddTag(selectedCamera.CameraID, tag.Name, tag.NodeId);
+                foreach (Tag tag in SelectedCamera.SubscribedTags)
+                {
+                    DatabaseUtils.ResetTagMonitoredStatus(SelectedCamera.CameraID);
+                    tag.TagId = DatabaseUtils.AddTag(SelectedCamera.CameraID, tag.Name, tag.NodeId);
+                    DatabaseUtils.UpdateTagMonitoredStatus(tag.Name, SelectedCamera.CameraID, 1);
+                }
+                ResetSyncIcons(Tags);
             }
+            catch (Exception)
+            {
+                
+                throw;
+            }
+        }
+
+        [RelayCommand]
+        public void ResetTagBrowser()
+        {
+            if (DatabaseUtils.CameraExists(SelectedCamera.Endpoint))
+            {
+                List<string> tagsNames = DatabaseUtils.GetSavedTagConfiguration(SelectedCamera.Endpoint);
+                if (tagsNames.Count != 0)
+                {
+                    SetTagBrowserConfiguration(SelectedCamera.Tags, tagsNames);
+                }
+            }
+            SearchTag(SelectedCamera.Tags, "Spreadsheet");
             ResetSyncIcons(Tags);
         }
+
+        [RelayCommand]
+        public void ClearErrors()
+        {
+            ErrorMessage = string.Empty;
+        }
+
+        [RelayCommand]
+        public void Debug()
+        {
+            ErrorMessage = "Debug";
+        }
+
         #endregion RelayCommands
 
         public void ResetSyncIcons(ObservableCollection<Tag> tagList)
@@ -221,6 +292,8 @@ namespace EdgePcConfigurationApp.ViewModels
                     nodes.Add(node);
                 }
 
+
+
                 return nodes;
             }
             catch (Exception ex)
@@ -239,10 +312,32 @@ namespace EdgePcConfigurationApp.ViewModels
                     tag.IsChecked = true;
                     SelectedCamera.SubscribedTags.Add(tag);
                 }
+                else
+                {
+                    tag.IsChecked = false;
+                    SelectedCamera.SubscribedTags.Remove(tag);
+                }
                 if(tag.Children.Count > 0)
                 {
                     ObservableCollection<Tag> children = new ObservableCollection<Tag>(tag.Children);
                     SetTagBrowserConfiguration(children, searchParams); //mmmm recursion 
+                }
+            }
+        }
+
+        private void SearchTag(ObservableCollection<Tag> tags, string searchParam)
+        {
+            foreach (Tag tag in tags)
+            {
+                if (tag.Name == searchParam)
+                {
+                    Tags = new ObservableCollection<Tag>(tag.Children);
+                    return;
+                }
+                else if(tag.Children.Count > 0)
+                {
+                    ObservableCollection<Tag> children = new ObservableCollection<Tag>(tag.Children);
+                    SearchTag(children, searchParam);
                 }
             }
         }
@@ -262,6 +357,7 @@ namespace EdgePcConfigurationApp.ViewModels
                 if (SelectedCamera != null)
                 {
                     SelectedCamera.Tags = await BrowseChildren(SelectedCamera.Session, SelectedCamera.References);
+                    
                     //Check to see if camera exists in database
                     if (DatabaseUtils.CameraExists(SelectedCamera.Endpoint))
                     {
@@ -271,7 +367,7 @@ namespace EdgePcConfigurationApp.ViewModels
                             SetTagBrowserConfiguration(SelectedCamera.Tags, tagsNames);
                         }
                     }
-                    Tags = SelectedCamera.Tags;
+                    SearchTag(SelectedCamera.Tags, "Spreadsheet");
                 }
                     
             }

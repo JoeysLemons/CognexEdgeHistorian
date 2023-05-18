@@ -1,81 +1,117 @@
-﻿<ui:UiPage x:Class="EdgePcConfigurationApp.Views.Pages.DashboardPage"
+﻿<ui:UiPage
+    x:Class="EdgePcConfigurationApp.Views.Pages.DashboardPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:local="clr-namespace:EdgePcConfigurationApp.Views.Pages"
-    xmlns:models="clr-namespace:EdgePcConfigurationApp.Models"
     xmlns:helpers="clr-namespace:EdgePcConfigurationApp.Helpers"
+    xmlns:local="clr-namespace:EdgePcConfigurationApp.Views.Pages"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:models="clr-namespace:EdgePcConfigurationApp.Models"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     Title="DashboardPage"
-    d:DataContext="{d:DesignInstance local:DashboardPage, IsDesignTimeCreatable=False}"
+    d:Background="{DynamicResource ApplicationBackgroundBrush}"
+    d:DataContext="{d:DesignInstance local:DashboardPage,
+                                     IsDesignTimeCreatable=False}"
     d:DesignHeight="450"
     d:DesignWidth="800"
-    d:Background="{DynamicResource ApplicationBackgroundBrush}"
     Foreground="{DynamicResource TextFillColorPrimaryBrush}"
     mc:Ignorable="d">
 
     <ui:UiPage.Resources>
         <Color x:Key="TextOnAccentFillColorPrimary">#FFFF</Color>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
     </ui:UiPage.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition/>
-            <ColumnDefinition/>
+            <ColumnDefinition />
+            <ColumnDefinition />
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
-            <RowDefinition Height="75"/>
-            <RowDefinition/>
+            <RowDefinition Height="75" />
+            <RowDefinition />
+            <RowDefinition Height="100" />
         </Grid.RowDefinitions>
-        <StackPanel Orientation="Horizontal" Grid.ColumnSpan="2">
-            <ui:TextBox x:Name="IpAddress" Width="310" Margin="10" Text="{Binding ViewModel.Endpoint, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-            <ui:Button Content="Connect"
-                       Margin="5"
-                       Command="{Binding ViewModel.ConnectToCameraCommand}"
-                       CommandParameter="{Binding ViewModel.Endpoint}"/>
-            <ui:Button Content="Disconnect" 
-                       Margin="5"
-                       Command="{Binding ViewModel.DisconnectFromCameraCommand}"
-                       CommandParameter="{Binding ElementName=DeviceConnectionPane, Path=SelectedItem}"/>
-            <ui:Button Content="Reset" Margin="5"/>
-            <ui:Button Content="Apply Configuration" Margin="5"
-                       Command="{Binding ViewModel.ApplyChangesCommand}"/>
+        <StackPanel Grid.ColumnSpan="2" Orientation="Horizontal">
+            <ui:TextBox
+                x:Name="IpAddress"
+                Width="310"
+                Margin="10"
+                Text="{Binding ViewModel.Endpoint, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+            <ui:Button
+                Margin="5"
+                Command="{Binding ViewModel.ConnectToCameraCommand}"
+                CommandParameter="{Binding ViewModel.Endpoint}"
+                Content="Connect" />
+            <ui:Button
+                Margin="5"
+                Command="{Binding ViewModel.DisconnectFromCameraCommand}"
+                CommandParameter="{Binding ElementName=DeviceConnectionPane, Path=SelectedItem}"
+                Content="Disconnect" />
+            <ui:Button
+                Margin="5"
+                Command="{Binding ViewModel.ResetTagBrowserCommand}"
+                Content="Reset" />
+            <ui:Button
+                Margin="5"
+                Command="{Binding ViewModel.ApplyChangesCommand}"
+                Content="Apply Configuration" />
+            <ui:Button Command="{Binding ViewModel.DebugCommand}" Content="Debug" />
         </StackPanel>
-        <ListBox x:Name="DeviceConnectionPane"
-                 Margin="10" Grid.Row="1" SelectionMode="Single"
-                 SelectedItem="{Binding ViewModel.SelectedCamera}"
-                 ItemsSource="{Binding ViewModel.CognexCameras}">
+        <ListBox
+            x:Name="DeviceConnectionPane"
+            Grid.Row="1"
+            Margin="10"
+            ItemsSource="{Binding ViewModel.CognexCameras}"
+            SelectedItem="{Binding ViewModel.SelectedCamera}"
+            SelectionMode="Single">
             <ListBox.ItemTemplate>
                 <DataTemplate>
                     <StackPanel>
-                        <TextBlock x:Name="SessionName" Text="{Binding HostName}"/>
-                        <TextBlock x:Name="SessionEndpoint" Text="{Binding Endpoint}"/>
+                        <TextBlock x:Name="SessionName" Text="{Binding HostName}" />
+                        <TextBlock x:Name="SessionEndpoint" Text="{Binding Endpoint}" />
                     </StackPanel>
                 </DataTemplate>
             </ListBox.ItemTemplate>
         </ListBox>
-        <Border CornerRadius="5" Grid.Row="1" Grid.Column="1" Margin="10">
+        <Border
+            Grid.Row="1"
+            Grid.Column="1"
+            Margin="10"
+            CornerRadius="5">
             <ScrollViewer Focusable="True" PreviewMouseWheel="ListViewScrollViewer_PreviewMouseWheel">
-                <TreeView x:Name="TagBrowser" ItemsSource="{Binding ViewModel.Tags}" ScrollViewer.CanContentScroll="True">
+                <TreeView
+                    x:Name="TagBrowser"
+                    ItemsSource="{Binding ViewModel.Tags}"
+                    ScrollViewer.CanContentScroll="True">
                     <TreeView.ItemTemplate>
                         <HierarchicalDataTemplate DataType="{x:Type models:Tag}" ItemsSource="{Binding Children}">
-                            <ToggleButton Width="300"
-                                          Height="30"
-                                          HorizontalContentAlignment="Left" 
-                                          Command="{Binding Path=DataContext.ViewModel.SubscribeTagCommand,  RelativeSource={RelativeSource AncestorType={x:Type TreeView}}}"
-                                          CommandParameter="{Binding}"
-                                          IsChecked="{Binding IsChecked}">
-                                <UniformGrid Rows="1"
-                                             Width="280"
-                                             HorizontalAlignment="Stretch">
-                                    <TextBlock Text="{Binding Name}" FontSize="12" VerticalAlignment="Center" HorizontalAlignment="Left"/>
-                                    <Image Source="{Binding SyncIcon}" Height="16" Margin="5 0" HorizontalAlignment="Right"/>
+                            <ToggleButton
+                                Width="300"
+                                Height="30"
+                                HorizontalContentAlignment="Left"
+                                Command="{Binding Path=DataContext.ViewModel.SubscribeTagCommand, RelativeSource={RelativeSource AncestorType={x:Type TreeView}}}"
+                                CommandParameter="{Binding}"
+                                IsChecked="{Binding IsChecked, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                <UniformGrid
+                                    Width="280"
+                                    HorizontalAlignment="Stretch"
+                                    Rows="1">
+                                    <TextBlock
+                                        HorizontalAlignment="Left"
+                                        VerticalAlignment="Center"
+                                        FontSize="12"
+                                        Text="{Binding Name}" />
+                                    <Image
+                                        Height="16"
+                                        Margin="5,0"
+                                        HorizontalAlignment="Right"
+                                        Source="{Binding SyncIcon}" />
                                 </UniformGrid>
                             </ToggleButton>
                         </HierarchicalDataTemplate>
                     </TreeView.ItemTemplate>
                     <TreeView.ItemContainerStyle>
-                        <Style TargetType="TreeViewItem" BasedOn="{StaticResource {x:Type TreeViewItem}}">
+                        <Style BasedOn="{StaticResource {x:Type TreeViewItem}}" TargetType="TreeViewItem">
                             <Setter Property="Background" Value="Transparent" />
                             <Setter Property="BorderBrush" Value="Transparent" />
                         </Style>
@@ -83,5 +119,43 @@
                 </TreeView>
             </ScrollViewer>
         </Border>
+        <Grid
+            Grid.Row="2"
+            Grid.ColumnSpan="2"
+            Visibility="{Binding ViewModel.IsStringNotEmpty, Converter={StaticResource BooleanToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition />
+                <ColumnDefinition Width="120" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="20" />
+                <RowDefinition />
+            </Grid.RowDefinitions>
+            <TextBlock Margin="15,0" Text="Error Log" />
+            <Border
+                Grid.Row="1"
+                Margin="10,0,0,10"
+                Background="#393939"
+                CornerRadius="5">
+                <ScrollViewer>
+                    <TextBlock
+                        Margin="10"
+                        VerticalAlignment="Center"
+                        FontSize="14"
+                        Foreground="Red"
+                        Text="{Binding ViewModel.ErrorMessage, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                        TextAlignment="Left" />
+                </ScrollViewer>
+            </Border>
+            <Button
+                Grid.Row="1"
+                Grid.Column="2"
+                Margin="0,0,10,10"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Center"
+                Command="{Binding ViewModel.ClearErrorsCommand}"
+                Content="Clear Errors" />
+        </Grid>
+
     </Grid>
 </ui:UiPage>

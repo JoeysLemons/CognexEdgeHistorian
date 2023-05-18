@@ -31,15 +31,8 @@ namespace EdgePcConfigurationApp.Views.Windows
 
             navigationService.SetNavigationControl(RootNavigation);
             WindowStyle = WindowStyle.None;
-            try
-            {
-                DatabaseUtils.OpenSQLConnection("Data Source=(localdb)\\EdgeHistorian;Initial Catalog=EdgeHistorian;Integrated Security=True");
-            }
-            catch(Exception ex)
-            {
-                Trace.WriteLine($"Failed to connect to database. Error Message: {ex.Message}");
-            }
-            
+
+            DatabaseUtils.ConnectionString = "Data Source=(localdb)\\EdgeHistorian;Initial Catalog=EdgeHistorian;Integrated Security=True";
         }
 
         #region INavigationWindow methods
