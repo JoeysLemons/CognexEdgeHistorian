@@ -207,9 +207,9 @@ namespace EdgePcConfigurationApp.ViewModels
                 return;
             try
             {
+                DatabaseUtils.ResetTagMonitoredStatus(SelectedCamera.CameraID);
                 foreach (Tag tag in SelectedCamera.SubscribedTags)
                 {
-                    DatabaseUtils.ResetTagMonitoredStatus(SelectedCamera.CameraID);
                     tag.TagId = DatabaseUtils.AddTag(SelectedCamera.CameraID, tag.Name, tag.NodeId);
                     DatabaseUtils.UpdateTagMonitoredStatus(tag.Name, SelectedCamera.CameraID, 1);
                 }

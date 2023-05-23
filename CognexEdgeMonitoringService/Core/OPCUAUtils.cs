@@ -148,6 +148,9 @@ namespace CognexEdgeMonitoringService.Core
                 MaxNotificationsPerPublish = 1000,
                 Priority = 0
             };
+
+            session.AddSubscription(subscription);
+            subscription.Create();
             return subscription;
         }
 
@@ -173,67 +176,110 @@ namespace CognexEdgeMonitoringService.Core
             // Apply the changes on the server
             subscription.ApplyChanges();
         }
+        
+        public static DataValue ReadTagValue(Session session, NodeId nodeId)
+        {
+            ReadValueId nodeToRead = new ReadValueId
+            {
+                NodeId = nodeId,
+                AttributeId = Attributes.Value
+            };
+
+            ReadValueIdCollection nodesToRead = new ReadValueIdCollection();
+            nodesToRead.Add(nodeToRead);
+
+            DataValueCollection results;
+            DiagnosticInfoCollection diagnosticInfos;
+
+            session.Read(
+                null,
+                0,
+                TimestampsToReturn.Both,
+                nodesToRead,
+                out results,
+                out diagnosticInfos);
+
+            if (StatusCode.IsGood(results[0].StatusCode))
+            {
+                return results[0];
+            }
+            else
+            {
+                throw new Exception($"Failed to read tag value. Status: {results[0].StatusCode}");
+            }
+        }
 
         public static void AddEventDrivenMonitoredItem(Subscription subscription, string nodeId, List<Tag> tags)
         {
-            MonitoredItem monitoredItem = new MonitoredItem(subscription.DefaultItem)
+            try
             {
-                DisplayName = nodeId,
-                StartNodeId = new NodeId(nodeId),
-                AttributeId = Attributes.Value,
-                MonitoringMode = MonitoringMode.Reporting,
-                SamplingInterval = -1, // Set the desired sampling interval (in milliseconds)
-                QueueSize = 1,
-                DiscardOldest = true
-            };
-
-            // Set the callback for value changes
-            monitoredItem.Notification += async (item, args) => 
-            {
-                // Read the values of the other nodes
-                ReadValueIdCollection nodesToReadCollection = new ReadValueIdCollection();
-                foreach (Tag tag in tags)
+                MonitoredItem monitoredItem = new MonitoredItem(subscription.DefaultItem)
                 {
+                    DisplayName = nodeId,
+                    StartNodeId = new NodeId(nodeId),
+                    AttributeId = Attributes.Value,
+                    MonitoringMode = MonitoringMode.Reporting,
+                    SamplingInterval = -1, // Set the desired sampling interval (in milliseconds)
+                    QueueSize = 1,
+                    DiscardOldest = true
+                };
+
+                // Set the callback for value changes
+                monitoredItem.Notification += async (item, args) => EventCallback(tags, subscription);
+            
+
+                // Add the monitored item to the subscription
+                subscription.AddItem(monitoredItem);
+
+                // Apply the changes on the server
+                subscription.ApplyChanges();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+        }
+
+        public static async void EventCallback(List<Tag> tags, Subscription subscription)
+        {
+            // Read the values of the other nodes
+            ReadValueIdCollection nodesToReadCollection = new ReadValueIdCollection();
+            foreach (Tag tag in tags)
+            {
+                try
+                {
+                    ReadResponse response = await subscription.Session.ReadAsync(
+                        null,
+                        0,
+                        TimestampsToReturn.Both,
+                        new ReadValueIdCollection
+                        {
+                            new ReadValueId()
+                            {
+                                NodeId = tag.NodeId,
+                                AttributeId = Attributes.Value,
+                            }
+                        },
+                        CancellationToken.None);
+
                     try
                     {
-                        ReadResponse response = await subscription.Session.ReadAsync(
-                            null,
-                            0,
-                            TimestampsToReturn.Both,
-                            new ReadValueIdCollection
-                            {
-                                new ReadValueId()
-                                {
-                                    NodeId = tag.NodeId,
-                                    AttributeId = Attributes.Value,
-                                }
-                            },
-                            CancellationToken.None);
-
-                        try
-                        {
-                            Console.WriteLine(response.Results[0].Value.ToString());
-                            //DatabaseUtils.StoreTagValue(tag.ID, response.Results[0].Value.ToString(), response.Results[0].SourceTimestamp.ToString());
-                        }
-                        catch (SqlException ex)
-                        {
-                            Trace.WriteLine($"Error while writing values to the database. Error Message: {ex.Message}");
-                            return;
-                        }
+                        Console.WriteLine(response.Results[0].Value.ToString());
+                        DatabaseUtils.StoreTagValue(tag.ID, response.Results[0].Value.ToString(), response.Results[0].SourceTimestamp.ToString());
                     }
-                    catch (Exception ex)
+                    catch (SqlException ex)
                     {
-                        Trace.WriteLine($"Something went wrong while monitoring tag values. Error Message: {ex.Message}");
+                        Trace.WriteLine($"Error while writing values to the database. Error Message: {ex.Message}");
                         return;
                     }
                 }
-            };
-
-            // Add the monitored item to the subscription
-            subscription.AddItem(monitoredItem);
-
-            // Apply the changes on the server
-            subscription.ApplyChanges();
+                catch (Exception ex)
+                {
+                    Trace.WriteLine($"Something went wrong while monitoring tag values. Error Message: {ex.Message}");
+                    return;
+                }
+            }
         }
 
         public static void RemoveMonitoredItem(Subscription subscription, string nodeId)

@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Data;
 using System.Data.Sql;
 using System.Data.SqlClient;
@@ -11,8 +12,10 @@ namespace CognexEdgeMonitoringService.Core
 {
     public class DatabaseUtils
     {
-        public static string ConnectionString { get; set; }
-        public static SqlConnection Connection { get; set; }
+        public static string ConnectionString { get; set; } = @"Data Source=(localdb)\EdgeHistorian;Initial Catalog=EdgeHistorian;Integrated Security=True";
+
+        public static SqlConnection Connection { get; set; } 
+
 
         public static void OpenSQLConnection(string connectionString)
         {
@@ -126,13 +129,17 @@ namespace CognexEdgeMonitoringService.Core
 
         public static void StoreTagValue(int tagId, string value, string timestamp)    //! Need to add support for storing an image as a blob later on down the line
         {
-            string insertTagValue = "INSERT INTO tag_values (tag_id, value, timestamp) VALUES (@tagId, @value, @timestamp)";
-            using (SqlCommand command = new SqlCommand(insertTagValue, Connection))
+            string insertTagValue = "INSERT INTO MonitoredTagValues (Tag_id, Value, Timestamp) VALUES (@tagId, @value, @timestamp)";
+            using (SqlConnection connection = new SqlConnection(ConnectionString))
             {
-                command.Parameters.AddWithValue("@tagId", tagId);
-                command.Parameters.AddWithValue("@value", value);
-                command.Parameters.AddWithValue("@timestamp", timestamp);
-                command.ExecuteNonQuery();
+                connection.Open();
+                using (SqlCommand command = new SqlCommand(insertTagValue, connection))
+                {
+                    command.Parameters.AddWithValue("@tagId", tagId);
+                    command.Parameters.AddWithValue("@value", value);
+                    command.Parameters.AddWithValue("@timestamp", timestamp);
+                    command.ExecuteNonQuery();
+                }
             }
         }
         public static DataTable GetCameraByEndpoint(string endpoint)
@@ -268,7 +275,7 @@ namespace CognexEdgeMonitoringService.Core
 
         public static List<int> GetCameraIdFromLocationId(int locationId)
         {
-            List<int> cameraIds = null;
+            List<int> cameraIds = new List<int>();
             using (SqlConnection connection = new SqlConnection(ConnectionString))
             {
                 connection.Open();
@@ -315,7 +322,8 @@ namespace CognexEdgeMonitoringService.Core
             string endpoint = string.Empty;
             using (SqlConnection connection = new SqlConnection(ConnectionString))
             {
-                string query = @"SELECT endpoints FROM Cameras WHERE id = @id";
+                connection.Open();
+                string query = @"SELECT Endpoint FROM Cameras WHERE id = @id";
                 using (SqlCommand command = new SqlCommand(query, connection))
                 {
                     command.Parameters.AddWithValue("@id", id);
@@ -332,13 +340,13 @@ namespace CognexEdgeMonitoringService.Core
             return endpoint;
         }
 
-        public static List<Tag> GetTags(int cameraId)
+        public static List<Tag> GetMonitoredTags(int cameraId)
         {
             List<Tag> tags = new List<Tag>();
             DataTable tagsTable = new DataTable();
             using (SqlConnection connection = new SqlConnection(ConnectionString))
             {
-                string query = @"SELECT Name, Node_id, id FROM MonitoredTags WHERE Camera_id = @Camera_id";
+                string query = @"SELECT Name, Node_id, id FROM MonitoredTags WHERE Camera_id = @Camera_id AND Monitored = 1";
                 using (SqlCommand command = new SqlCommand(query, connection))
                 {
                     command.Parameters.AddWithValue("@Camera_id", cameraId);

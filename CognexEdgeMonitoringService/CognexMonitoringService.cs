@@ -2,7 +2,6 @@
 using System.Xml;
 using CognexEdgeMonitoringService.Core;
 using CognexEdgeMonitoringService.Models;
-using System.IO;
 using System.Threading;
 using Opc.Ua.Client;
 using System.Collections.Generic;
@@ -17,10 +16,10 @@ namespace CognexEdgeMonitoringService
 {
     public partial class CognexMonitoringService : ServiceBase
     {
-        string ConfigFilePath = Path.Combine(Directory.GetCurrentDirectory(), "ServiceConfig.config");
         private bool isRunning = false;
         private Thread edgeMonitoringThread = null;
         private string countNodeId;
+        public string connectionString = string.Empty;
         public ExeConfigurationFileMap fileMap = new ExeConfigurationFileMap();
         public Configuration serviceConfig;
         public CognexMonitoringService()
@@ -33,8 +32,12 @@ namespace CognexEdgeMonitoringService
             isRunning= true;
             fileMap.ExeConfigFilename = @"ServiceConfig.config";
             serviceConfig = ConfigurationManager.OpenMappedExeConfiguration(fileMap, ConfigurationUserLevel.None);
-            edgeMonitoringThread = new Thread(EdgeMonitoringWorker);
-            edgeMonitoringThread.Start();
+            Task monitoringWorker = Task.Run(EdgeMonitoringWorker);
+
+            monitoringWorker.Wait();
+            
+            Thread.Sleep((Timeout.Infinite));
+            Console.WriteLine("Monitoring halted.");
         }
         public void OnDebug()
         {
@@ -55,9 +58,14 @@ namespace CognexEdgeMonitoringService
             string location = string.Empty;
             try
             {
-                location = ConfigurationManager.AppSettings["Location"]; //Get Location from config
-                DatabaseUtils.ConnectionString = ConfigurationManager.ConnectionStrings["MainConnectionString"].ConnectionString;   //Get connection string from config
-                countNodeId = ConfigurationManager.AppSettings["CountNodeId"];
+                location = "AdamsTesting";
+                countNodeId = "ns=2;s=Tasks.InspectionTask.Spreadsheet.AcquisitionCount";
+
+
+                //location = serviceConfig.AppSettings.Settings["Location"].Value; //Get Location from config
+                //Console.WriteLine(location);
+                //connectionString = serviceConfig.ConnectionStrings.ConnectionStrings["MainConnectionString"].ConnectionString;   //Get connection string from config
+                //countNodeId = serviceConfig.AppSettings.Settings["CountNodeId"].Value;
             }
             catch (NullReferenceException ex)
             {
@@ -67,7 +75,7 @@ namespace CognexEdgeMonitoringService
             var locationId = GetLocationId(location);
             List<int> cameraIds = GetCameraId(locationId);
             List<CognexSession> sessions = new List<CognexSession>();
-
+            //DatabaseUtils.ConnectionString = connectionString;
             foreach(int id in cameraIds)
             {
                 string endpoint = DatabaseUtils.GetCameraEndpointFromId(id);
@@ -76,11 +84,12 @@ namespace CognexEdgeMonitoringService
                 await OPCUAUtils.InitializeApplication();
                 Session session = await OPCUAUtils.ConnectToServer(opcConfig, $"opc.tcp://{endpoint}:4840");
                 CognexSession cognexSession = new CognexSession(session, endpoint, session.SessionName, id);
-                cognexSession.Tags = DatabaseUtils.GetTags(cognexSession.ID);
+                cognexSession.Tags = DatabaseUtils.GetMonitoredTags(cognexSession.ID);
                 cognexSession.Subscription = OPCUAUtils.CreateEventSubscription(cognexSession.Session);
                 OPCUAUtils.AddEventDrivenMonitoredItem(cognexSession.Subscription, countNodeId, cognexSession.Tags);
                 sessions.Add(cognexSession);
             }
+
         }
 
         public int GetLocationId(string location)
