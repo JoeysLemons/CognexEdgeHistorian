@@ -11,6 +11,9 @@ using System.Net;
 using System;
 using System.Threading.Tasks;
 using System.Diagnostics;
+using System.IO;
+using System.Net.Sockets;
+using System.Text;
 
 namespace CognexEdgeMonitoringService
 {
@@ -32,6 +35,7 @@ namespace CognexEdgeMonitoringService
             isRunning= true;
             fileMap.ExeConfigFilename = @"ServiceConfig.config";
             serviceConfig = ConfigurationManager.OpenMappedExeConfiguration(fileMap, ConfigurationUserLevel.None);
+            
             Task monitoringWorker = Task.Run(EdgeMonitoringWorker);
 
             monitoringWorker.Wait();
@@ -79,7 +83,7 @@ namespace CognexEdgeMonitoringService
             foreach(int id in cameraIds)
             {
                 string endpoint = DatabaseUtils.GetCameraEndpointFromId(id);
-
+                
                 var opcConfig = OPCUAUtils.CreateApplicationConfiguration();
                 await OPCUAUtils.InitializeApplication();
                 Session session = await OPCUAUtils.ConnectToServer(opcConfig, $"opc.tcp://{endpoint}:4840");
@@ -89,7 +93,6 @@ namespace CognexEdgeMonitoringService
                 OPCUAUtils.AddEventDrivenMonitoredItem(cognexSession.Subscription, countNodeId, cognexSession.Tags);
                 sessions.Add(cognexSession);
             }
-
         }
 
         public int GetLocationId(string location)
