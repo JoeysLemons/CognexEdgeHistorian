@@ -265,7 +265,8 @@ namespace CognexEdgeMonitoringService.Core
 
                     try
                     {
-                        Console.WriteLine(response.Results[0].Value.ToString());
+                        Trace.WriteLine(response.Results[0].Value.ToString());
+                        Trace.WriteLine($"OPC Trigger Server Time: {response.Results[0].ServerTimestamp.ToString("yyyy-MM-dd HH:mm:ss.fff")}");
                         DatabaseUtils.StoreTagValue(tag.ID, response.Results[0].Value.ToString(), response.Results[0].SourceTimestamp.ToString());
                     }
                     catch (SqlException ex)

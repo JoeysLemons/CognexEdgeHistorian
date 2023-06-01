@@ -269,6 +269,7 @@
       <DependentUpon>CognexMonitoringService.cs</DependentUpon>
     </Compile>
     <Compile Include="Core\DatabaseUtils.cs" />
+    <Compile Include="Core\FolderMonitor.cs" />
     <Compile Include="Core\OPCUAUtils.cs" />
     <Compile Include="Core\TelnetUtils.cs" />
     <Compile Include="Models\CognexSession.cs" />

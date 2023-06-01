@@ -36,6 +36,13 @@ namespace CognexEdgeMonitoringService
             fileMap.ExeConfigFilename = @"ServiceConfig.config";
             serviceConfig = ConfigurationManager.OpenMappedExeConfiguration(fileMap, ConfigurationUserLevel.None);
             
+            //Start FolderMonitor
+            string filePath = @"C:\Users\jverstraete\Desktop\JunkChest\Cognex\FTP";
+            FolderMonitor folderMonitor = new FolderMonitor(filePath);
+            folderMonitor.FileChanged += onFileChanged;
+            
+            folderMonitor.StartMonitoring();
+            
             Task monitoringWorker = Task.Run(EdgeMonitoringWorker);
 
             monitoringWorker.Wait();
@@ -93,6 +100,13 @@ namespace CognexEdgeMonitoringService
                 OPCUAUtils.AddEventDrivenMonitoredItem(cognexSession.Subscription, countNodeId, cognexSession.Tags);
                 sessions.Add(cognexSession);
             }
+        }
+
+        public void onFileChanged(object sender, FileChangedEventArgs e)
+        {
+            FileInfo fileInfo = new FileInfo(e.FilePath);
+            Trace.WriteLine($"File Crerated: {Path.GetFileName(fileInfo.Name)}");
+            Trace.WriteLine($"File Crerated: {fileInfo.CreationTime.ToString("yyyy-MM-dd HH:mm:ss.fff")}");
         }
 
         public int GetLocationId(string location)
