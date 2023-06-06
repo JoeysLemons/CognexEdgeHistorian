@@ -7,7 +7,7 @@ namespace CognexEdgeMonitoringService.Core
     {
         private readonly FileSystemWatcher watcher;
         private bool isRunning;
-
+        public string CurrentImageName;
         public event EventHandler<FileChangedEventArgs> FileChanged;
 
         public FolderMonitor(string folderPath)

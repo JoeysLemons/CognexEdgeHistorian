@@ -36,12 +36,15 @@ namespace CognexEdgeMonitoringService
             fileMap.ExeConfigFilename = @"ServiceConfig.config";
             serviceConfig = ConfigurationManager.OpenMappedExeConfiguration(fileMap, ConfigurationUserLevel.None);
             
-            //Start FolderMonitor
-            string filePath = @"C:\Users\jverstraete\Desktop\JunkChest\Cognex\FTP";
-            FolderMonitor folderMonitor = new FolderMonitor(filePath);
-            folderMonitor.FileChanged += onFileChanged;
+            //Setup Thread Pool
+            int workerThreads = 0;
+            int completionPortThreads = 0;
+            ThreadPool.GetMinThreads(out workerThreads, out completionPortThreads);
+            ThreadPool.SetMinThreads(3, completionPortThreads);
+            ThreadPool.SetMaxThreads(8, completionPortThreads);
             
-            folderMonitor.StartMonitoring();
+            string filePath = @"C:\Users\jverstraete\Desktop\JunkChest\Cognex\FTP";
+            
             
             Task monitoringWorker = Task.Run(EdgeMonitoringWorker);
 
@@ -87,28 +90,29 @@ namespace CognexEdgeMonitoringService
             List<int> cameraIds = GetCameraId(locationId);
             List<CognexSession> sessions = new List<CognexSession>();
             //DatabaseUtils.ConnectionString = connectionString;
-            foreach(int id in cameraIds)
+            try
             {
-                string endpoint = DatabaseUtils.GetCameraEndpointFromId(id);
+                foreach(int id in cameraIds)
+                {
+                    string endpoint = DatabaseUtils.GetCameraEndpointFromId(id);
                 
-                var opcConfig = OPCUAUtils.CreateApplicationConfiguration();
-                await OPCUAUtils.InitializeApplication();
-                Session session = await OPCUAUtils.ConnectToServer(opcConfig, $"opc.tcp://{endpoint}:4840");
-                CognexSession cognexSession = new CognexSession(session, endpoint, session.SessionName, id);
-                cognexSession.Tags = DatabaseUtils.GetMonitoredTags(cognexSession.ID);
-                cognexSession.Subscription = OPCUAUtils.CreateEventSubscription(cognexSession.Session);
-                OPCUAUtils.AddEventDrivenMonitoredItem(cognexSession.Subscription, countNodeId, cognexSession.Tags);
-                sessions.Add(cognexSession);
+                    var opcConfig = OPCUAUtils.CreateApplicationConfiguration();
+                    await OPCUAUtils.InitializeApplication();
+                    Session session = await OPCUAUtils.ConnectToServer(opcConfig, $"opc.tcp://{endpoint}:4840");
+                    CognexSession cognexSession = new CognexSession(session, endpoint, session.SessionName, id);
+                    cognexSession.Tags = DatabaseUtils.GetMonitoredTags(cognexSession.ID);
+                    cognexSession.Subscription = OPCUAUtils.CreateEventSubscription(cognexSession.Session);
+                    OPCUAUtils.AddEventDrivenMonitoredItem(cognexSession.Subscription, countNodeId, cognexSession.Tags);
+                    sessions.Add(cognexSession);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                throw;
             }
         }
-
-        public void onFileChanged(object sender, FileChangedEventArgs e)
-        {
-            FileInfo fileInfo = new FileInfo(e.FilePath);
-            Trace.WriteLine($"File Crerated: {Path.GetFileName(fileInfo.Name)}");
-            Trace.WriteLine($"File Crerated: {fileInfo.CreationTime.ToString("yyyy-MM-dd HH:mm:ss.fff")}");
-        }
-
+        
         public int GetLocationId(string location)
         {
             int locationId = DatabaseUtils.GetLocationId(location);

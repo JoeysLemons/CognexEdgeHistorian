@@ -11,11 +11,14 @@ using System.Diagnostics;
 using CognexEdgeMonitoringService.Models;
 using System.Threading;
 using System.Data.SqlClient;
+using System.IO;
 
 namespace CognexEdgeMonitoringService.Core
 {
     public class OPCUAUtils
     {
+        private static string imageNameNodeID;
+        private static string ftpDirectory;
         public static async Task<ApplicationConfiguration> InitializeApplication()
         {
             var config = CreateApplicationConfiguration();
@@ -263,6 +266,11 @@ namespace CognexEdgeMonitoringService.Core
                         },
                         CancellationToken.None);
 
+                    if (tag.NodeId == imageNameNodeID)
+                    {
+                        tag.AssociatedImageName = response.Results[0].Value.ToString();
+                        GetAssociatedImage(tag);
+                    }
                     try
                     {
                         Trace.WriteLine(response.Results[0].Value.ToString());
@@ -283,6 +291,26 @@ namespace CognexEdgeMonitoringService.Core
             }
         }
 
+        public static Task<string> GetAssociatedImage(Tag tag)
+        {
+            return Task.Run(() =>
+            {
+                //get files from directory
+                var files = Directory.GetFiles(ftpDirectory);
+                string associatedImage = string.Empty;
+
+                //Check for matching filename
+                foreach (var file in files)
+                {
+                    if (Path.GetFileName(file) == tag.AssociatedImageName)
+                    {
+                        return file;
+                    }
+                }
+
+                return null;
+            });
+        }
         public static void RemoveMonitoredItem(Subscription subscription, string nodeId)
         {
             MonitoredItem monitoredItem = subscription.MonitoredItems.FirstOrDefault(item => item.StartNodeId.ToString() == nodeId);

@@ -19,7 +19,7 @@ namespace CognexEdgeMonitoringService.Models
 		public object Value { get; set; }
 		public string Location { get; set; }
 		public List<string> Filters { get; set; }
-		public object AssociatedImage { get; set; }
+		public string AssociatedImageName { get; set; }
 		public string NodeId { get; set; }
 		public string Timestamp { get; set; }
 		private string _browseName;
