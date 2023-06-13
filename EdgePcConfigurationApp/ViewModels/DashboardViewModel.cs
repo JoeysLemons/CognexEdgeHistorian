@@ -43,6 +43,8 @@ namespace EdgePcConfigurationApp.ViewModels
             }
         }
 
+        public readonly DependencyProperty IsCameraSettingsOpen;
+
         //Holds the collection of tags that should be currently displayed in the tag browser
         private ObservableCollection<Tag> _tags = new ObservableCollection<Tag>();
         public ObservableCollection<Tag> Tags

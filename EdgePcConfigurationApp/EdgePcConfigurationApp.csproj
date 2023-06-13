@@ -2,12 +2,12 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net6.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <LangVersion>10.0</LangVersion>
     <UseWPF>true</UseWPF>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>applicationIcon.ico</ApplicationIcon>
+    <TargetFramework>net6.0-windows</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
@@ -31,6 +31,8 @@
     <None Include="..\CognexEdgeMonitoringService\ServiceConfig.config">
       <Link>ServiceConfig.config</Link>
     </None>
+    <None Remove="Assets\control.png" />
+    <None Remove="Assets\icons8-settings-64.png" />
   </ItemGroup>
 
   <ItemGroup>
