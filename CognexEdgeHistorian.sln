@@ -3,8 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.4.33205.214
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CognexEdgeHistorian", "CognexEdgeHistorian\CognexEdgeHistorian.csproj", "{7C4CB7B2-8E38-4D76-B833-A80872B931BF}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CognexEdgeMonitoringService", "CognexEdgeMonitoringService\CognexEdgeMonitoringService.csproj", "{50D51509-AC91-4BC4-81B3-EF95C90F2F8F}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EdgePcConfigurationApp", "EdgePcConfigurationApp\EdgePcConfigurationApp.csproj", "{89BE9286-AC7E-492A-92EA-0B2CE7FDCDF2}"
@@ -15,10 +13,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{7C4CB7B2-8E38-4D76-B833-A80872B931BF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{7C4CB7B2-8E38-4D76-B833-A80872B931BF}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{7C4CB7B2-8E38-4D76-B833-A80872B931BF}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{7C4CB7B2-8E38-4D76-B833-A80872B931BF}.Release|Any CPU.Build.0 = Release|Any CPU
 		{50D51509-AC91-4BC4-81B3-EF95C90F2F8F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{50D51509-AC91-4BC4-81B3-EF95C90F2F8F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{50D51509-AC91-4BC4-81B3-EF95C90F2F8F}.Release|Any CPU.ActiveCfg = Release|Any CPU
