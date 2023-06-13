@@ -244,7 +244,11 @@ namespace EdgePcConfigurationApp.ViewModels
         {
             ErrorMessage = string.Empty;
         }
-
+        [RelayCommand]
+        public void SetCameraSettings()
+        {
+            
+        }
         [RelayCommand]
         public void Debug()
         {
@@ -372,12 +376,11 @@ namespace EdgePcConfigurationApp.ViewModels
                 }
             }
         }
-
         public static void DisconnectFromAllDevices(ObservableCollection<CognexCamera> deviceList)
         {
             foreach(CognexCamera camera in deviceList)
             {
-                camera.Tags.Clear();
+                camera.Tags?.Clear();
                 camera.Session.Dispose();
             }
         }

@@ -10,6 +10,7 @@ using System.Net;
 using System.Reflection.Metadata;
 using System.Text;
 using System.Threading.Tasks;
+using CommunityToolkit.Mvvm.Input;
 
 namespace EdgePcConfigurationApp.Models
 {
@@ -54,8 +55,7 @@ namespace EdgePcConfigurationApp.Models
                 return string.Empty;
             }
         }
-
-
+        
         public CognexCamera(Session session, string sessionName, string endpoint, int cameraId, ReferenceDescriptionCollection references)
         {
             Session = session;

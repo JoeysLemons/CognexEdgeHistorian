@@ -22,13 +22,9 @@
             <Grid HorizontalAlignment="Left" Margin="0 0 0 5">
                 <TextBox Width="600" Text="{Binding ViewModel.ConnectionString, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
             </Grid>
-            <TextBlock Text="Location" Margin="5"/>
+            <TextBlock Text="Company Name" Margin="5"/>
             <Grid HorizontalAlignment="Left" Margin="0 0 0 5">
                 <TextBox Width="600" Text="{Binding ViewModel.Location, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-            </Grid>
-            <TextBlock Text="Acquisition Count Node ID" Margin="5"/>
-            <Grid HorizontalAlignment="Left">
-                <TextBox Width="600" Text="{Binding ViewModel.AcquisitionCountNodeID, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
             </Grid>
             <Button Content="Save" Margin="0 30"  
                     HorizontalAlignment="Center"
