@@ -42,8 +42,8 @@ namespace EdgePcConfigurationApp.ViewModels
                 UpdateTagBrowser();
             }
         }
-
-        public readonly DependencyProperty IsCameraSettingsOpen;
+        [ObservableProperty]
+        public bool isCameraSettingsOpen;
 
         //Holds the collection of tags that should be currently displayed in the tag browser
         private ObservableCollection<Tag> _tags = new ObservableCollection<Tag>();
@@ -247,8 +247,10 @@ namespace EdgePcConfigurationApp.ViewModels
             ErrorMessage = string.Empty;
         }
         [RelayCommand]
-        public void SetCameraSettings()
+        public void SetCameraSettings(object parameter)
         {
+            if (isCameraSettingsOpen)
+                return;
             
         }
         [RelayCommand]

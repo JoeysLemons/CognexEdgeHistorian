@@ -11,11 +11,11 @@
       </jdbc-additional-properties>
       <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
-    <data-source source="LOCAL" name="@cognexdatahistorian-dev-instance-1.cviwzelohsci.us-east-2.rds.amazonaws.com" uuid="a9752c95-7413-4a35-9a6d-f03a2419e5f3">
-      <driver-ref>mysql.8</driver-ref>
+    <data-source source="LOCAL" name="postgres@cognexdashboard-instance-1.cviwzelohsci.us-east-2.rds.amazonaws.com" uuid="4443b036-d2b3-4be2-882f-cad28a2816bc">
+      <driver-ref>postgresql</driver-ref>
       <synchronize>true</synchronize>
-      <jdbc-driver>com.mysql.cj.jdbc.Driver</jdbc-driver>
-      <jdbc-url>jdbc:mysql://cognexdatahistorian-dev-instance-1.cviwzelohsci.us-east-2.rds.amazonaws.com:3306</jdbc-url>
+      <jdbc-driver>org.postgresql.Driver</jdbc-driver>
+      <jdbc-url>jdbc:postgresql://cognexdashboard-instance-1.cviwzelohsci.us-east-2.rds.amazonaws.com:5432/postgres</jdbc-url>
       <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
   </component>

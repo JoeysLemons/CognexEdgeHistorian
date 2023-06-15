@@ -16,6 +16,7 @@
 
   <ItemGroup>
     <PackageReference Include="OPCFoundation.NetStandard.Opc.Ua" Version="1.4.371.86" />
+    <PackageReference Include="SimpleModal.WPF" Version="1.0.0" />
     <PackageReference Include="SQLite" Version="3.13.0" />
     <PackageReference Include="System.Data.SQLite" Version="1.0.117" />
     <PackageReference Include="WPF-UI" Version="2.0.3" />
@@ -33,6 +34,7 @@
     </None>
     <None Remove="Assets\control.png" />
     <None Remove="Assets\icons8-settings-64.png" />
+    <None Remove="Controls\**" />
   </ItemGroup>
 
   <ItemGroup>
@@ -43,6 +45,19 @@
     <Resource Include="Assets\applicationIcon-1024.png" />
     <Resource Include="Assets\applicationIcon-256.png" />
     <Resource Include="Assets\icons8-no-synchronize-48.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Page Remove="Themes\ModalBase.xaml" />
+    <Page Remove="Controls\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="Controls\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Remove="Controls\**" />
   </ItemGroup>
 
 </Project>
