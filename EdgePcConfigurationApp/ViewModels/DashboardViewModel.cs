@@ -17,6 +17,9 @@ using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
+using EdgePcConfigurationApp.Views;
+using EdgePcConfigurationApp.Views.Pages;
+using EdgePcConfigurationApp.Views.Windows;
 using Wpf.Ui.Common.Interfaces;
 using Wpf.Ui.Controls;
 using Session = Opc.Ua.Client.Session;
@@ -249,14 +252,16 @@ namespace EdgePcConfigurationApp.ViewModels
         [RelayCommand]
         public void SetCameraSettings(object parameter)
         {
-            if (isCameraSettingsOpen)
-                return;
-            
+            CameraSettingsWindow cameraSettingsWindow = new CameraSettingsWindow();
+            cameraSettingsWindow.DataContext = new CameraInfoViewModel(cameraSettingsWindow);
+            cameraSettingsWindow.ShowDialog();
         }
         [RelayCommand]
         public void Debug()
         {
-            ErrorMessage = "Debug";
+            CameraSettingsWindow cameraSettingsWindow = new CameraSettingsWindow();
+            cameraSettingsWindow.DataContext = new CameraInfoViewModel(cameraSettingsWindow);
+            cameraSettingsWindow.ShowDialog();
         }
 
         #endregion RelayCommands

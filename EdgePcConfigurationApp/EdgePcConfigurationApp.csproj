@@ -15,6 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Npgsql" Version="8.0.0-preview.4" />
     <PackageReference Include="OPCFoundation.NetStandard.Opc.Ua" Version="1.4.371.86" />
     <PackageReference Include="SimpleModal.WPF" Version="1.0.0" />
     <PackageReference Include="SQLite" Version="3.13.0" />
@@ -50,10 +51,14 @@
   <ItemGroup>
     <Page Remove="Themes\ModalBase.xaml" />
     <Page Remove="Controls\**" />
+    <Page Remove="Views\Test.xaml" />
+    <Page Remove="Views\Pages\CameraInfoPage.xaml" />
   </ItemGroup>
 
   <ItemGroup>
     <Compile Remove="Controls\**" />
+    <Compile Remove="Views\Test.xaml.cs" />
+    <Compile Remove="Views\Pages\CameraInfoPage.xaml.cs" />
   </ItemGroup>
 
   <ItemGroup>
