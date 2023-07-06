@@ -38,16 +38,20 @@
         
         
         <StackPanel Grid.ColumnSpan="2" Orientation="Horizontal">
-            <ui:TextBox
-                x:Name="IpAddress"
-                Width="310"
-                Margin="10"
-                Text="{Binding ViewModel.Endpoint, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+            <!-- <ui:TextBox -->
+            <!--     x:Name="IpAddress" -->
+            <!--     Width="310" -->
+            <!--     Margin="10" -->
+            <!--     Text="{Binding ViewModel.Endpoint, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" /> -->
             <ui:Button
-                Margin="5"
-                Command="{Binding ViewModel.ConnectToCameraCommand}"
-                CommandParameter="{Binding ViewModel.Endpoint}"
-                Content="Connect" />
+                Margin="10 0 5 0"
+                Command="{Binding ViewModel.OpenAddCameraDialogCommand}"
+                Content="+ Add New Camera"/>
+            <!-- <ui:Button -->
+            <!--     Margin="5" -->
+            <!--     Command="{Binding ViewModel.ConnectToCameraCommand}" -->
+            <!--     CommandParameter="{Binding ViewModel.Endpoint}" -->
+            <!--     Content="Connect" /> -->
             <ui:Button
                 Margin="5"
                 Command="{Binding ViewModel.DisconnectFromCameraCommand}"
@@ -79,7 +83,7 @@
                             <ColumnDefinition Width="40"/>
                         </Grid.ColumnDefinitions>
                         <StackPanel>
-                            <TextBlock x:Name="SessionName" Text="{Binding HostName}" />
+                            <TextBlock x:Name="SessionName" Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                             <TextBlock x:Name="SessionEndpoint" Text="{Binding Endpoint}" />
                         </StackPanel>
                         <Button Grid.Column="1"

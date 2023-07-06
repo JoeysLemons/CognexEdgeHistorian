@@ -17,11 +17,13 @@ using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Media3D;
 using EdgePcConfigurationApp.Views;
 using EdgePcConfigurationApp.Views.Pages;
 using EdgePcConfigurationApp.Views.Windows;
 using Wpf.Ui.Common.Interfaces;
 using Wpf.Ui.Controls;
+using MessageBox = System.Windows.MessageBox;
 using Session = Opc.Ua.Client.Session;
 
 namespace EdgePcConfigurationApp.ViewModels
@@ -31,7 +33,6 @@ namespace EdgePcConfigurationApp.ViewModels
         // Used to keep track of all the cameras currently connected
         public static ObservableCollection<CognexCamera> CognexCameras { get; set; } = new ObservableCollection<CognexCamera>();
         [ObservableProperty]
-        [NotifyCanExecuteChangedFor(nameof(ConnectToCameraCommand))]
         private string? endpoint;   //Holds text that is in the IP address box
 
         //Holds the currently selected camera
@@ -81,7 +82,10 @@ namespace EdgePcConfigurationApp.ViewModels
             get { return !string.IsNullOrEmpty(errorMessage); }
         }
 
-
+        public void AddCamera(CameraInfo cameraInfo)
+        {
+            ConnectToCamera(cameraInfo);
+        }
         
 
         //Leaving these here to implement the INavigationAware Interface. May possibly use these in the future 
@@ -103,34 +107,55 @@ namespace EdgePcConfigurationApp.ViewModels
 
         #region RelayCommands
         //Connect to camera command
-        [RelayCommand(CanExecute = nameof(CanConnectToCamera))]
-        private async Task ConnectToCamera()
+        
+        private async Task ConnectToCamera(CameraInfo cameraInfo)
         {
-            Trace.WriteLine($"Endpoint: {endpoint}");
+            string ipAddress = cameraInfo.IpAddress;
+            Trace.WriteLine($"Endpoint: {ipAddress}");
             try
             {
+                bool connected = false;
+                CognexCamera camera = new CognexCamera(cameraInfo.Name, ipAddress); //Create a new instance of a CognexCamera
+                CognexCameras.Add(camera);  //Add camera to list of connected cameras
+                ReferenceDescriptionCollection references;
                 var opcConfig = OPCUAUtils.CreateApplicationConfiguration();    //Create OPC UA App Config
                 await OPCUAUtils.InitializeApplication();                       //Initialize OPC UA Client using app config
-                Session session = await OPCUAUtils.ConnectToServer(opcConfig, $"opc.tcp://{endpoint}:4840");    //Connect to Cognex OPC UA Server via the endpoint which is retrieved from the endpoint textbox
+                Session session = null;
+                try
+                {
+                    session = await OPCUAUtils.ConnectToServer(opcConfig, $"opc.tcp://{ipAddress}:4840");    //Connect to Cognex OPC UA Server via the endpoint which is retrieved from the endpoint textbox
+                    connected = true;
+                }
+                catch (Opc.Ua.ServiceResultException ex)
+                {
+                    Console.WriteLine(ex);
+                }
 
-                //Browse through the top level tags on the server
-                ReferenceDescriptionCollection references;
-                Byte[] continuationPoint;
-                session.Browse(
-                    null,
-                    null,
-                    ObjectIds.ObjectsFolder,
-                    0u,
-                    BrowseDirection.Forward,
-                    ReferenceTypeIds.HierarchicalReferences,
-                    true,
-                    uint.MaxValue,
-                    out continuationPoint,
-                    out references);
-                int cameraId = DatabaseUtils.AddCamera(session.SessionName, endpoint);      //Adds the camera to the database if not already there. This is so that if the camera is connected to again config data can be loaded
-
-                CognexCamera camera = new CognexCamera(session, session.SessionName, endpoint, cameraId, references); //Create a new instance of a CognexCamera
-                CognexCameras.Add(camera);  //Add camera to list of connected cameras
+                if (connected && session != null)
+                {
+                    //Browse through the top level tags on the server
+                    
+                    Byte[] continuationPoint;
+                    session.Browse(
+                        null,
+                        null,
+                        ObjectIds.ObjectsFolder,
+                        0u,
+                        BrowseDirection.Forward,
+                        ReferenceTypeIds.HierarchicalReferences,
+                        true,
+                        uint.MaxValue,
+                        out continuationPoint,
+                        out references);
+                    int cameraId = DatabaseUtils.AddCamera(session.SessionName, ipAddress);      //Adds the camera to the database if not already there. This is so that if the camera is connected to again config data can be loaded
+                    camera.Session = session;
+                    camera.CameraID = cameraId;
+                    camera.References = references;
+                    camera.HostName = session.SessionName;
+                }
+                
+                
+                
             }
             catch(InvalidOperationException ex)
             {
@@ -253,17 +278,22 @@ namespace EdgePcConfigurationApp.ViewModels
         public void SetCameraSettings(object parameter)
         {
             CameraSettingsWindow cameraSettingsWindow = new CameraSettingsWindow();
-            cameraSettingsWindow.DataContext = new CameraInfoViewModel(cameraSettingsWindow);
+            cameraSettingsWindow.DataContext = new CameraInfoViewModel(cameraSettingsWindow, this);
             cameraSettingsWindow.ShowDialog();
         }
         [RelayCommand]
         public void Debug()
         {
-            CameraSettingsWindow cameraSettingsWindow = new CameraSettingsWindow();
-            cameraSettingsWindow.DataContext = new CameraInfoViewModel(cameraSettingsWindow);
-            cameraSettingsWindow.ShowDialog();
         }
 
+        [RelayCommand]
+        public void OpenAddCameraDialog()
+        {
+            CameraSettingsWindow cameraSettingsWindow = new CameraSettingsWindow();
+            cameraSettingsWindow.DataContext = new CameraInfoViewModel(cameraSettingsWindow, this);
+            cameraSettingsWindow.ShowDialog();
+        }
+        
         #endregion RelayCommands
 
         public void ResetSyncIcons(ObservableCollection<Tag> tagList)

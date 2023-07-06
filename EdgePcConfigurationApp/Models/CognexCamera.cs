@@ -16,12 +16,14 @@ namespace EdgePcConfigurationApp.Models
 {
     public class CognexCamera : ObservableObject
     {
-        public Session Session { get; init; }
-        public string Endpoint { get; init; } = string.Empty;
-        public string SessionName { get; init; } = string.Empty;
-        public string HostName { get; init; } = string.Empty;
-        public int CameraID { get; init; } 
-        public ReferenceDescriptionCollection References { get; init; }
+        public Session Session { get; set; }
+        public string Endpoint { get; set; } = string.Empty;
+        public string SessionName { get; set; } = string.Empty;
+        public string HostName { get; set; } = string.Empty;
+        public string Name { get; set; }
+        public int CameraID { get; set; } 
+        public bool Connected { get; set; }
+        public ReferenceDescriptionCollection References { get; set; }
         private ObservableCollection<Tag> _tags;
 
         public ObservableCollection<Tag> Tags
@@ -55,15 +57,12 @@ namespace EdgePcConfigurationApp.Models
                 return string.Empty;
             }
         }
-        
-        public CognexCamera(Session session, string sessionName, string endpoint, int cameraId, ReferenceDescriptionCollection references)
+
+        public CognexCamera(string name, string endpoint)
         {
-            Session = session;
-            SessionName = session.Identity.ToString();
             Endpoint = endpoint;
-            References = references;
+            Name = name;
             HostName = GetHostNameFromIpAddress(Endpoint);
-            CameraID = cameraId;
         }
     }
 }
