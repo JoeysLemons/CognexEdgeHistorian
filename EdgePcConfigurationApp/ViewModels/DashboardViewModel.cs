@@ -92,17 +92,7 @@ namespace EdgePcConfigurationApp.ViewModels
         public void OnNavigatedTo() { }
         public void OnNavigatedFrom() { }
 
-        // Changes the CanExecute property for the Connect Button
-        private bool CanConnectToCamera()
-        {
-            
-            if (endpoint == null || endpoint == string.Empty)
-                return false;
-            var result = CognexCameras.FirstOrDefault(s => s.Endpoint == endpoint);
-            if (result?.Endpoint == endpoint)
-                return false;
-            return true;
-        }
+        
 
 
         #region RelayCommands
@@ -176,7 +166,7 @@ namespace EdgePcConfigurationApp.ViewModels
                 return;
             try
             {
-                var result = CognexCameras.FirstOrDefault(s => s.Endpoint == endpoint);
+                var result = CognexCameras.FirstOrDefault(s => s.Endpoint == SelectedCamera.Endpoint);
                 result.Tags.Clear();
                 result.Session?.Dispose();
                 Tags.Clear();
