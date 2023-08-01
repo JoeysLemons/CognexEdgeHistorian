@@ -10,13 +10,10 @@ public class CameraInfo
     public string ProductionLine { get; set; }
     public string Name { get; set; }
 
-    public CameraInfo(string ipAddress, string name, string region, string location, string productionLine)
+    public CameraInfo(string ipAddress, string name)
     {
         IpAddress = ipAddress;
         Name = name;
-        Region = region;
-        Location = location;
-        ProductionLine = productionLine;
     }
 }
 

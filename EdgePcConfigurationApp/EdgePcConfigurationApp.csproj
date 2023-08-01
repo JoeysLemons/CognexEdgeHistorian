@@ -36,6 +36,7 @@
     <None Remove="Assets\control.png" />
     <None Remove="Assets\icons8-settings-64.png" />
     <None Remove="Controls\**" />
+    <None Remove="appsettings.json" />
   </ItemGroup>
 
   <ItemGroup>
@@ -53,12 +54,15 @@
     <Page Remove="Controls\**" />
     <Page Remove="Views\Test.xaml" />
     <Page Remove="Views\Pages\CameraInfoPage.xaml" />
+    <Page Remove="Views\Pages\ConnectionsPage.xaml" />
   </ItemGroup>
 
   <ItemGroup>
     <Compile Remove="Controls\**" />
     <Compile Remove="Views\Test.xaml.cs" />
     <Compile Remove="Views\Pages\CameraInfoPage.xaml.cs" />
+    <Compile Remove="Views\Pages\ConnectionsPage.xaml.cs" />
+    <Compile Remove="ViewModels\ConnectionsViewModel.cs" />
   </ItemGroup>
 
   <ItemGroup>

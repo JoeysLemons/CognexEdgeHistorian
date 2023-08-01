@@ -1,0 +1,11 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<AppSettings>
+  <Database>
+    <ConnectionString>Data Source=(localdb)\EdgeHistorian;Initial Catalog=EdgeHistorian;Integrated Security=True</ConnectionString>
+    <Provider>System.Data.SqlClient</Provider>
+  </Database>
+  <PCSettings>
+    <GeographicLocation>AdamsTestingGeo</GeographicLocation>
+    <ManufacturingArea>AdamsTesting</ManufacturingArea>
+  </PCSettings>
+</AppSettings>

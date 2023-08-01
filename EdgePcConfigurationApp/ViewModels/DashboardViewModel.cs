@@ -46,6 +46,9 @@ namespace EdgePcConfigurationApp.ViewModels
                 UpdateTagBrowser();
             }
         }
+
+        [ObservableProperty] public string jobName = "No Job Selected";
+        
         [ObservableProperty]
         public bool isCameraSettingsOpen;
 
@@ -267,8 +270,9 @@ namespace EdgePcConfigurationApp.ViewModels
         [RelayCommand]
         public void SetCameraSettings(object parameter)
         {
+            CognexCamera camera = parameter as CognexCamera;
             CameraSettingsWindow cameraSettingsWindow = new CameraSettingsWindow();
-            cameraSettingsWindow.DataContext = new CameraInfoViewModel(cameraSettingsWindow, this);
+            cameraSettingsWindow.DataContext = new CameraInfoViewModel(cameraSettingsWindow, this, camera);
             cameraSettingsWindow.ShowDialog();
         }
         [RelayCommand]
@@ -307,7 +311,8 @@ namespace EdgePcConfigurationApp.ViewModels
             try
             {
                 ObservableCollection<Tag> nodes = new ObservableCollection<Tag>();
-
+                if (references is null)
+                    throw new NullReferenceException();
                 foreach (var reference in references)
                 {
                     string displayName = reference.DisplayName.ToString();
@@ -350,6 +355,13 @@ namespace EdgePcConfigurationApp.ViewModels
 
 
                 return nodes;
+            }
+            catch (NullReferenceException ex)
+            {
+                ErrorMessage =
+                    "The device you selected is either disconnected or does not support OPC UA. Please ensure that the camera is connected properly and that it supports OPC UA.";
+                Trace.WriteLine(ErrorMessage);
+                return null;
             }
             catch (Exception ex)
             {
@@ -405,12 +417,13 @@ namespace EdgePcConfigurationApp.ViewModels
                 }
             }
         }
+
         public static void DisconnectFromAllDevices(ObservableCollection<CognexCamera> deviceList)
         {
             foreach(CognexCamera camera in deviceList)
             {
                 camera.Tags?.Clear();
-                camera.Session.Dispose();
+                camera.Session?.Dispose();
             }
         }
         public async void UpdateTagBrowser()
@@ -420,7 +433,8 @@ namespace EdgePcConfigurationApp.ViewModels
                 if (SelectedCamera != null)
                 {
                     SelectedCamera.Tags = await BrowseChildren(SelectedCamera.Session, SelectedCamera.References);
-                    
+                    if (selectedCamera.Tags == null)
+                        return;
                     //Check to see if camera exists in database
                     if (DatabaseUtils.CameraExists(SelectedCamera.Endpoint))
                     {

@@ -2,12 +2,16 @@
 using EdgePcConfigurationApp.Models;
 using EdgePcConfigurationApp.ViewModels;
 using System;
+using System.Configuration;
 using System.Data.Entity;
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
+using System.Xml;
+using Microsoft.Extensions.Configuration;
 using Wpf.Ui.Controls.Interfaces;
 using Wpf.Ui.Mvvm.Contracts;
+using ConfigurationManager = System.Configuration.ConfigurationManager;
 
 namespace EdgePcConfigurationApp.Views.Windows
 {
@@ -32,7 +36,14 @@ namespace EdgePcConfigurationApp.Views.Windows
             navigationService.SetNavigationControl(RootNavigation);
             WindowStyle = WindowStyle.None;
 
-            DatabaseUtils.ConnectionString = "Data Source=(localdb)\\EdgeHistorian;Initial Catalog=EdgeHistorian;Integrated Security=True";
+            XmlDocument doc = new XmlDocument();
+            doc.Load("../../../AppSettings.xml");
+            XmlNode root = doc.DocumentElement;
+            XmlNode dbSettings = root.SelectSingleNode("Database");
+            
+            string connectionString = dbSettings.SelectSingleNode("ConnectionString").InnerText;
+            DatabaseUtils.ConnectionString = SanitizeConnectionString(connectionString);
+            Trace.WriteLine(DatabaseUtils.ConnectionString);
         }
 
         #region INavigationWindow methods
@@ -69,6 +80,16 @@ namespace EdgePcConfigurationApp.Views.Windows
             }
             // Make sure that closing this window will begin the process of closing the application.
             Application.Current.Shutdown();
+        }
+        static string SanitizeConnectionString(string connectionString)
+        {
+            // Remove leading and trailing whitespace
+            string sanitizedConnectionString = connectionString.Trim();
+
+            // Properly escape special characters
+            sanitizedConnectionString = System.Security.SecurityElement.Escape(sanitizedConnectionString);
+
+            return sanitizedConnectionString;
         }
     }
 }

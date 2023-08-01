@@ -6,49 +6,102 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Diagnostics;
 using System.Windows.Media;
+using System.Xml;
 using Wpf.Ui.Common.Interfaces;
 
 namespace EdgePcConfigurationApp.ViewModels
 {
     public partial class DataViewModel : ObservableObject, INavigationAware
     {
-        private ExeConfigurationFileMap fileMap;
-        private Configuration serviceConfig;
         public void OnNavigatedTo(){}
         public void OnNavigatedFrom(){}
+        private string xmlFilePath = "../../../AppSettings.xml";
 
         [ObservableProperty]
         private string? connectionString;
         [ObservableProperty]
-        private string? location;
+        private string? geoLocation;
         [ObservableProperty]
-        private string? acquisitionCountNodeID;
+        private string? manufacturingArea;
 
 
         [RelayCommand]
         public void SaveServiceConfig()
         {
-            //Write textbox values to EdgeMonitoringService app.config
-            //serviceConfig.ConnectionStrings.ConnectionStrings["MainConnectionString"].ConnectionString = connectionString;
-            var settings = serviceConfig.AppSettings.Settings;
+            try
+            {
+                XmlDocument doc = new XmlDocument();
+                doc.Load(xmlFilePath);
+                XmlNode root = doc.DocumentElement;
+                XmlNode dbSettings = root.SelectSingleNode("Database");
+                XmlNode pcSettings = root.SelectSingleNode("PCSettings");
+                dbSettings.SelectSingleNode("ConnectionString").InnerText =
+                    string.IsNullOrWhiteSpace(connectionString)
+                        ? dbSettings.SelectSingleNode("ConnectionString").InnerText
+                        : connectionString;
 
-            settings["Location"].Value = location;
-            settings["AcquisitionCountNodeID"].Value = acquisitionCountNodeID;
-            serviceConfig.ConnectionStrings.ConnectionStrings["MainConnectionString"].ConnectionString = connectionString;
+                pcSettings.SelectSingleNode("GeographicLocation").InnerText =
+                    string.IsNullOrWhiteSpace(geoLocation)
+                        ? pcSettings.SelectSingleNode("GeographicLocation").InnerText
+                        : geoLocation;
+
+                pcSettings.SelectSingleNode("ManufacturingArea").InnerText =
+                    string.IsNullOrWhiteSpace(manufacturingArea)
+                        ? pcSettings.SelectSingleNode("ManufacturingArea").InnerText
+                        : manufacturingArea;
+
+                doc.Save(xmlFilePath);
+            }
+            catch (System.IO.FileNotFoundException e)
+            {
+                ErrorMessage = "Could not open the AppSettings.xml configuration file.";
+                Console.WriteLine(e);
+                return;
+            }
+            catch (NullReferenceException e)
+            {
+                ErrorMessage = "Could not find one or more XML Nodes. Changes were not saved.";
+                Trace.WriteLine(ErrorMessage);
+                return;
+            }
+            catch (Exception e)
+            {
+                ErrorMessage =
+                    $"Something unexpected occurred while attempting to save changes to configuration file. Error Message: {ErrorMessage}";
+                return;
+            }
             
-            serviceConfig.Save();
-            ConfigurationManager.RefreshSection(serviceConfig.AppSettings.SectionInformation.Name);
-            ConfigurationManager.RefreshSection(serviceConfig.ConnectionStrings.SectionInformation.Name);
-            
-            Trace.WriteLine($"Database Connection String: {connectionString}\nLocation: {location}\nAcquisition Node ID: {acquisitionCountNodeID}");
+            Trace.WriteLine($"Database Connection String: {connectionString}\nLocation: {geoLocation}\nAcquisition Node ID: {manufacturingArea}");
+        }
+        
+        //Holds the current error message that should be displayed in the error log. If this string is empty the error log is not visible
+        private string errorMessage = string.Empty;
+        public string ErrorMessage
+        {
+            get { return errorMessage; }
+            set 
+            {
+                errorMessage = value;
+                OnPropertyChanged(nameof(ErrorMessage));
+                OnPropertyChanged(nameof(IsStringNotEmpty));
+            }
+        }
+
+        //Used for the BooleanToVisibilityConverter in the XAML Code. It just returns a true if the string is not empty and false if it is empty.
+        public bool IsStringNotEmpty
+        {
+            get { return !string.IsNullOrEmpty(errorMessage); }
+        }
+        
+        [RelayCommand]
+        public void ClearErrors()
+        {
+            ErrorMessage = string.Empty;
         }
 
         public DataViewModel()
         {
-            fileMap = new ExeConfigurationFileMap();
-            fileMap.ExeConfigFilename =
-                @"C:\Users\jverstraete\source\repos\CognexEdgeHistorian\CognexEdgeMonitoringService\ServiceConfig.config";
-            serviceConfig = ConfigurationManager.OpenMappedExeConfiguration(fileMap, ConfigurationUserLevel.None);
+            
         }
     }
 }

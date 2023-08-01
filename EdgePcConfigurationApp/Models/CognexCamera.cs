@@ -23,6 +23,9 @@ namespace EdgePcConfigurationApp.Models
         public string Name { get; set; }
         public int CameraID { get; set; } 
         public bool Connected { get; set; }
+        public string Region { get; set; }
+        public string Location { get; set; }
+        public string ProductionLine { get; set; }
         public ReferenceDescriptionCollection References { get; set; }
         private ObservableCollection<Tag> _tags;
 

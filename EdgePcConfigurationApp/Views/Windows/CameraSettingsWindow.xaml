@@ -14,45 +14,29 @@
         WindowCornerPreference="Round"
         WindowStyle="None"
         ResizeMode="NoResize"
-        Title="CameraSettingsWindow" Height="500" Width="500">
+        Title="CameraSettingsWindow" Height="150" Width="500">
     <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="110"/>
-            <RowDefinition/>
-        </Grid.RowDefinitions>
-        <ui:TitleBar
-            Title="Camera Information"
-            Grid.Row="0"
-            Grid.Column="0"
-            FontSize="20"
-            Margin="42,0,0,0"
-            ShowMaximize="False"
-            ShowMinimize="False">
-        </ui:TitleBar>
-        <StackPanel Grid.Row="1" Margin="5 0">
+        <StackPanel Margin="5 0">
+            <TextBlock FontSize="22" Text="Add Camera" HorizontalAlignment="Center" Margin="10 25"/>
             <TextBlock FontSize="12" Text="IP Address" Margin="50 5"/>
             <TextBox MinWidth="400" HorizontalAlignment="Center" Text="{Binding ipAddress, UpdateSourceTrigger=PropertyChanged}"/>
             <TextBlock FontSize="12" Text="Camera Name" Margin="50 5"/>
             <TextBox MinWidth="400" HorizontalAlignment="Center" Text="{Binding name, UpdateSourceTrigger=PropertyChanged}"/>
-            <TextBlock FontSize="12" Text="Region" Margin="50 5"/>
-            <TextBox MinWidth="400" HorizontalAlignment="Center" Text="{Binding region, UpdateSourceTrigger=PropertyChanged}"/>
-            <TextBlock FontSize="12" Text="Location" Margin="50 5"/>
-            <TextBox MinWidth="400" HorizontalAlignment="Center" Text="{Binding location, UpdateSourceTrigger=PropertyChanged}"/>
-            <TextBlock FontSize="12" Text="Production Line" Margin="50 5"/>
-            <TextBox MinWidth="400" HorizontalAlignment="Center" Text="{Binding productionLine, UpdateSourceTrigger=PropertyChanged}"/>
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Bottom">
                 <Button 
                     Content="Add"
                     Command="{Binding SaveInfoCommand}"
                     Margin="5 15"
                     Width="80"
-                    HorizontalAlignment="Center"/>
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Bottom"/>
                 <Button 
                     Content="Cancel"
                     Command="{Binding CloseCommand}"
                     Margin="5 15"
                     Width="80"
-                    HorizontalAlignment="Center"/>
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Bottom"/>
             </StackPanel>
         </StackPanel>
         

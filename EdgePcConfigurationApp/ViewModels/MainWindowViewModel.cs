@@ -52,13 +52,6 @@ namespace EdgePcConfigurationApp.ViewModels
                     PageTag = "data",
                     Icon = SymbolRegular.Database24,
                     PageType = typeof(Views.Pages.DataPage)
-                },
-                new NavigationItem()
-                {
-                    Content = "Connections2",
-                    PageTag = "connections2",
-                    Icon = SymbolRegular.Database24,
-                    PageType = typeof(Views.Pages.ConnectionsPage)
                 }
             };
 

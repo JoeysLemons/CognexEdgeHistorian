@@ -54,8 +54,6 @@ namespace EdgePcConfigurationApp
                 services.AddScoped<ViewModels.DataViewModel>();
                 services.AddScoped<Views.Pages.SettingsPage>();
                 services.AddScoped<ViewModels.SettingsViewModel>();
-                services.AddScoped<Views.Pages.ConnectionsPage>();
-                services.AddScoped<ViewModels.ConnectionsViewModel>();
 
                 // Configuration
                 services.Configure<AppConfig>(context.Configuration.GetSection(nameof(AppConfig)));

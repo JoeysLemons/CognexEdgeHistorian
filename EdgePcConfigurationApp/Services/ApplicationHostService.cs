@@ -51,7 +51,7 @@ namespace EdgePcConfigurationApp.Services
                 _navigationWindow = (_serviceProvider.GetService(typeof(INavigationWindow)) as INavigationWindow)!;
                 _navigationWindow!.ShowWindow();
 
-                _navigationWindow.Navigate(typeof(Views.Pages.DashboardPage));
+                _navigationWindow.Navigate(typeof(Views.Pages.DataPage));
             }
 
             await Task.CompletedTask;

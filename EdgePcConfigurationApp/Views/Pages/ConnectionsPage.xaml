@@ -59,34 +59,37 @@
                 Content="Apply Configuration" />
             <ui:Button Command="{Binding ViewModel.DebugCommand}" Content="Debug" />
         </StackPanel>
-        <ListBox
+        <StackPanel Grid.Row="1" Orientation="Vertical">
+            <TextBlock Text="Device Connection Pane"/>
+            <ListBox
             x:Name="DeviceConnectionPane"
-            Grid.Row="1"
             Margin="10"
             VerticalAlignment="Stretch"
             ItemsSource="{Binding ViewModel.CognexCameras}"
             SelectedItem="{Binding ViewModel.SelectedCamera}"
             SelectionMode="Single">
-            <ListBox.ItemTemplate>
-                <DataTemplate>
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="40"/>
-                        </Grid.ColumnDefinitions>
-                        <StackPanel>
-                            <TextBlock x:Name="SessionName" Text="{Binding HostName}" />
-                            <TextBlock x:Name="SessionEndpoint" Text="{Binding Endpoint}" />
-                        </StackPanel>
-                        <Button Grid.Column="1"
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="40"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock x:Name="SessionName" Text="{Binding HostName}" />
+                                <TextBlock x:Name="SessionEndpoint" Text="{Binding Endpoint}" />
+                            </StackPanel>
+                            <Button Grid.Column="1"
                                 Command="{Binding DataContext.ViewModel.SetCameraSettingsCommand, RelativeSource={RelativeSource AncestorType={x:Type ListBox}}}">
-                            <Image Grid.Column="1" 
+                                <Image Grid.Column="1" 
                                    Source="/Assets/icons8-done-48.png"/>
-                        </Button>
-                    </Grid>
-                </DataTemplate>
-            </ListBox.ItemTemplate>
-        </ListBox>
+                            </Button>
+                        </Grid>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </StackPanel>
+        
         <Border
             Grid.Row="1"
             Grid.Column="1"

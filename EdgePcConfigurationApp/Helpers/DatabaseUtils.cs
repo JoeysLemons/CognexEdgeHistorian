@@ -5,6 +5,7 @@ using System.Data;
 using System.Data.Sql;
 using System.Data.SqlClient;
 using System.Windows.Documents;
+using System.Xml;
 
 namespace EdgePcConfigurationApp.Helpers
 {
@@ -104,13 +105,13 @@ namespace EdgePcConfigurationApp.Helpers
 
 
 
-        public static int AddTag(int cameraId, string tagName, string nodeId)
+        public static int AddTag(int jobId, string tagName, string nodeId)
         {
             using (SqlConnection SqlConnection = new SqlConnection(ConnectionString))
             {
                 SqlConnection.Open();
                 string checkTagExists = "SELECT id FROM MonitoredTags WHERE Name = @tagName";
-                string insertTag = "INSERT INTO MonitoredTags (Camera_id, Name, Node_id, Monitored) VALUES (@cameraId, @tagName, @nodeId, @Monitored); SELECT SCOPE_IDENTITY();";
+                string insertTag = "INSERT INTO MonitoredTags (Job_id, Name, Node_id, Monitored) VALUES (@jobId, @tagName, @nodeId, @Monitored); SELECT SCOPE_IDENTITY();";
                 object existingTagId;
                 using (SqlCommand command = new SqlCommand(checkTagExists, SqlConnection))
                 {
@@ -123,7 +124,7 @@ namespace EdgePcConfigurationApp.Helpers
                 }
                 using (SqlCommand command = new SqlCommand(insertTag, SqlConnection))
                 {
-                    command.Parameters.AddWithValue("@cameraId", cameraId);
+                    command.Parameters.AddWithValue("@jobId", jobId);
                     command.Parameters.AddWithValue("@tagName", tagName);
                     command.Parameters.AddWithValue("@nodeId", nodeId);
                     command.Parameters.AddWithValue("@Monitored", 1);
@@ -168,16 +169,16 @@ namespace EdgePcConfigurationApp.Helpers
             }
         }
 
-        public static void UpdateTagMonitoredStatus(string tagName, int cameraId, int monitored)
+        public static void UpdateTagMonitoredStatus(string tagName, int jobId, int monitored)
         {
             using (SqlConnection SqlConnection = new SqlConnection(ConnectionString))
             {
                 SqlConnection.Open();
-                string updateMonitoredStatus = "UPDATE MonitoredTags SET Monitored = @monitored WHERE Name = @tagName AND Camera_id = @CameraId;";
+                string updateMonitoredStatus = "UPDATE MonitoredTags SET Monitored = @monitored WHERE Name = @tagName AND job_id = @jobId;";
                 using (SqlCommand command = new SqlCommand(updateMonitoredStatus, SqlConnection))
                 {
                     command.Parameters.AddWithValue("@monitored", monitored);
-                    command.Parameters.AddWithValue("@CameraId", cameraId);
+                    command.Parameters.AddWithValue("@jobId", jobId);
                     command.Parameters.AddWithValue("@tagName", tagName);
                     var rowsAffected = command.ExecuteNonQuery();
                     Console.WriteLine($"Rows affected: {rowsAffected.ToString()}");
@@ -190,10 +191,10 @@ namespace EdgePcConfigurationApp.Helpers
             using (SqlConnection SqlConnection = new SqlConnection(ConnectionString))
             {
                 SqlConnection.Open();
-                string resetMonitoredStatus = "UPDATE MonitoredTags SET Monitored = 0 Where Camera_id = @CameraId;";
+                string resetMonitoredStatus = "UPDATE MonitoredTags SET Monitored = 0 Where job_id = @jobId;";
                 using (SqlCommand command = new SqlCommand(resetMonitoredStatus, SqlConnection))
                 {
-                    command.Parameters.AddWithValue("@CameraId", cameraId);
+                    command.Parameters.AddWithValue("@jobId", cameraId);
                     var rowsAffected = command.ExecuteNonQuery();
                     Console.WriteLine($"Rows affected: {rowsAffected.ToString()}");
                 }
@@ -221,28 +222,7 @@ namespace EdgePcConfigurationApp.Helpers
             }
         }
 
-        public static DataTable GetCamerasAndTags()
-        {
-            using (SqlConnection SqlConnection = new SqlConnection(ConnectionString))
-            {
-                SqlConnection.Open();
-                DataTable cameraTagInfo = new DataTable();
-
-                string selectCameraInfo = @"
-                    SELECT cameras.id, cameras.camera_name, cameras.camera_endpoint, tags.id, tags.tag_name
-                    FROM cameras
-                    LEFT JOIN tags ON cameras.id = tags.camera_id";
-                using (SqlCommand command = new SqlCommand(selectCameraInfo, SqlConnection))
-                {
-                    using (SqlDataAdapter adapter = new SqlDataAdapter(command))
-                    {
-                        adapter.Fill(cameraTagInfo);
-                    }
-                }
-
-                return cameraTagInfo;
-            }
-        }
+        
         public static bool CameraExists(string cameraName)
         {
             using (SqlConnection SqlConnection = new SqlConnection(ConnectionString))
@@ -275,7 +255,7 @@ namespace EdgePcConfigurationApp.Helpers
             {
                 SqlConnection.Open();
                 string queryString = "SELECT id FROM Cameras WHERE Endpoint = @Endpoint;";
-                int cameraId = -1;
+                int jobId = -1;
                 SqlCommand command = new SqlCommand(queryString, SqlConnection);
                 command.Parameters.AddWithValue("@Endpoint", endpoint);
 
@@ -283,15 +263,15 @@ namespace EdgePcConfigurationApp.Helpers
                 {
                     if (reader.Read())
                     {
-                        cameraId = reader.GetInt32(0);
+                        jobId = reader.GetInt32(0);
                     }
                 }
 
                 DataTable tags = new DataTable();
-                string getTagNames = @"SELECT Name FROM MonitoredTags WHERE Camera_id = @Camera_id AND Monitored = 1";
+                string getTagNames = @"SELECT Name FROM MonitoredTags WHERE job_id = @job_id AND Monitored = 1";
                 using (SqlCommand getTagCommand = new SqlCommand(getTagNames, SqlConnection))
                 {
-                    getTagCommand.Parameters.AddWithValue("@Camera_id", cameraId);
+                    getTagCommand.Parameters.AddWithValue("@job_id", jobId);
                     using (SqlDataAdapter adapter = new SqlDataAdapter(getTagCommand))
                     {
                         adapter.Fill(tags);

@@ -33,7 +33,7 @@ namespace EdgePcConfigurationApp.Models
 			set; 
 		} = new List<Tag>();
 
-		public bool IsChecked { get; set; } = false;
+		public bool IsChecked { get; set; } = true;
 		private bool _synced;
 
 		public bool Synced
