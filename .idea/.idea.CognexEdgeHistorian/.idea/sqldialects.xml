@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="SqlDialectMappings">
+    <file url="file://$APPLICATION_CONFIG_DIR$/consoles/db/4443b036-d2b3-4be2-882f-cad28a2816bc/console_2.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/EdgePcConfigurationApp/Helpers/DatabaseUtils.cs" dialect="GenericSQL" />
+    <file url="PROJECT" dialect="PostgreSQL" />
+  </component>
+</project>
