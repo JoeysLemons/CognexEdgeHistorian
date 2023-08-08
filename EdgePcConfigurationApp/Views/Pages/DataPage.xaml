@@ -24,6 +24,10 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
         <StackPanel Orientation="Vertical" HorizontalAlignment="Center" Margin="0 50">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="Database Connection Status: " Margin="5 10"/>
+                <TextBlock Text="{Binding ViewModel.DbConnected}" Margin="5 10"/>
+            </StackPanel>
             <TextBlock Text="Database Connection String" Margin="5"/>
             <Grid HorizontalAlignment="Left" Margin="0 0 0 5">
                 <TextBox Width="600" Text="{Binding ViewModel.ConnectionString, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>

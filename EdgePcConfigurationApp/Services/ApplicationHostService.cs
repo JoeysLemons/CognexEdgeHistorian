@@ -4,6 +4,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Xml;
+using EdgePcConfigurationApp.Helpers;
 using Wpf.Ui.Mvvm.Contracts;
 
 namespace EdgePcConfigurationApp.Services
@@ -15,6 +17,7 @@ namespace EdgePcConfigurationApp.Services
     {
         private readonly IServiceProvider _serviceProvider;
         private INavigationWindow _navigationWindow;
+        
 
         public ApplicationHostService(IServiceProvider serviceProvider)
         {
@@ -50,11 +53,18 @@ namespace EdgePcConfigurationApp.Services
             {
                 _navigationWindow = (_serviceProvider.GetService(typeof(INavigationWindow)) as INavigationWindow)!;
                 _navigationWindow!.ShowWindow();
-
-                _navigationWindow.Navigate(typeof(Views.Pages.DataPage));
+                //Test database connection
+                bool dbConnected = DatabaseUtils.TestDBConnection();
+                //if connected check to see if the computer is registered in the DB
+                if(dbConnected) FirstTimeSetupUtils.RegisterComputer();
+                //startup page will change depending on whether a DB connection has been established or not
+                var startUpPage = dbConnected ? typeof(Views.Pages.DashboardPage) : typeof(Views.Pages.DataPage);
+                _navigationWindow.Navigate(startUpPage);
             }
 
             await Task.CompletedTask;
         }
+
+        
     }
 }

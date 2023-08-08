@@ -7,6 +7,7 @@ using System.Configuration;
 using System.Diagnostics;
 using System.Windows.Media;
 using System.Xml;
+using EdgePcConfigurationApp.Helpers;
 using Wpf.Ui.Common.Interfaces;
 
 namespace EdgePcConfigurationApp.ViewModels
@@ -24,6 +25,8 @@ namespace EdgePcConfigurationApp.ViewModels
         [ObservableProperty]
         private string? manufacturingArea;
 
+        [ObservableProperty] private string dbConnected = "Disconnected";
+
 
         [RelayCommand]
         public void SaveServiceConfig()
@@ -31,7 +34,7 @@ namespace EdgePcConfigurationApp.ViewModels
             try
             {
                 XmlDocument doc = new XmlDocument();
-                doc.Load(xmlFilePath);
+                doc.Load(xmlFilePath); 
                 XmlNode root = doc.DocumentElement;
                 XmlNode dbSettings = root.SelectSingleNode("Database");
                 XmlNode pcSettings = root.SelectSingleNode("PCSettings");
@@ -51,6 +54,20 @@ namespace EdgePcConfigurationApp.ViewModels
                         : manufacturingArea;
 
                 doc.Save(xmlFilePath);
+                //Test DB connection string
+                DatabaseUtils.ConnectionString = connectionString;
+                bool connected = DatabaseUtils.TestDBConnection();
+                dbConnected = connected ? "Connected" : "Disconnected";
+                if (connected)
+                {
+                    //check to see if computer is registered if not computer will be added to database with a GUID and saved locally in the config file
+                    FirstTimeSetupUtils.RegisterComputer();
+                    //store all location information
+                    DatabaseUtils.StoreGeoLocation(geoLocation);
+                    DatabaseUtils.StoreManufacturingArea(manufacturingArea);
+                    //todo: Link all the data together PC, ManufacturingArea, and GeoLocation in the PcLocation Table
+                }
+
             }
             catch (System.IO.FileNotFoundException e)
             {
@@ -70,7 +87,7 @@ namespace EdgePcConfigurationApp.ViewModels
                     $"Something unexpected occurred while attempting to save changes to configuration file. Error Message: {ErrorMessage}";
                 return;
             }
-            
+
             Trace.WriteLine($"Database Connection String: {connectionString}\nLocation: {geoLocation}\nAcquisition Node ID: {manufacturingArea}");
         }
         
@@ -101,7 +118,7 @@ namespace EdgePcConfigurationApp.ViewModels
 
         public DataViewModel()
         {
-            
+            dbConnected = DatabaseUtils.TestDBConnection() ? "Connected" : "Disconnected";
         }
     }
 }

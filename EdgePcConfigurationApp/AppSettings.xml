@@ -1,4 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
+<!--DO NOT EDIT WILL CAUSE APP INSTABILITY-->
 <AppSettings>
   <Database>
     <ConnectionString>Data Source=(localdb)\EdgeHistorian;Initial Catalog=EdgeHistorian;Integrated Security=True</ConnectionString>
@@ -7,5 +8,6 @@
   <PCSettings>
     <GeographicLocation>AdamsTestingGeo</GeographicLocation>
     <ManufacturingArea>AdamsTesting</ManufacturingArea>
+    <ComputerGUID></ComputerGUID>
   </PCSettings>
 </AppSettings>

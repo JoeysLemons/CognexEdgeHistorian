@@ -12,6 +12,30 @@ namespace EdgePcConfigurationApp.Helpers
     public class DatabaseUtils
     {
         public static string ConnectionString { get; set; }
+
+        public static bool TestDBConnection()
+        {
+            bool connected = false;
+            try
+            {
+                using (SqlConnection sqlConnection = new SqlConnection(ConnectionString))
+                {
+
+                    sqlConnection.Open();
+                    connected = true;
+                }
+            }
+            catch (SqlException e)
+            {
+                Console.WriteLine(e);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
+
+            return connected;
+        }
         public static void CreateCamerasTable()
         {
             using (SqlConnection SqlConnection = new SqlConnection(ConnectionString))
@@ -103,7 +127,7 @@ namespace EdgePcConfigurationApp.Helpers
             }
         }
 
-
+        
 
         public static int AddTag(int jobId, string tagName, string nodeId)
         {
@@ -286,6 +310,104 @@ namespace EdgePcConfigurationApp.Helpers
                 }
 
                 return tagNames;
+            }
+        }
+
+        public static bool CheckPCExists(string guid)
+        {
+            //Check to see if a pc with a matching GUID exists
+            try
+            {
+                using (SqlConnection sqlConnection = new SqlConnection(ConnectionString))
+                {
+                    sqlConnection.Open();
+                    string queryString = @"SELECT * FROM Computers WHERE GUID = @guid";
+                    using (SqlCommand command = new SqlCommand(queryString, sqlConnection))
+                    {
+                        command.Parameters.AddWithValue("@guid", guid);
+                        using (SqlDataReader reader = command.ExecuteReader())
+                        {
+                            return reader.Read();
+                        }
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+        }
+        public static string StoreComputer()
+        {
+            try
+            {
+                string pcGuid = Guid.NewGuid().ToString();
+                string pcName = Environment.MachineName;
+                using (SqlConnection sqlConnection = new SqlConnection(ConnectionString))
+                {
+                    sqlConnection.Open();
+                    string queryString = @"INSERT INTO Computers (Name, GUID) VALUES (@name, @guid)";
+                    using (SqlCommand command = new SqlCommand(queryString, sqlConnection))
+                    {
+                        command.Parameters.AddWithValue("@name", pcName);
+                        command.Parameters.AddWithValue("@guid", pcGuid);
+                        command.ExecuteNonQuery();
+                    }
+                }
+
+                return pcGuid;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+        }
+
+        public static void StoreManufacturingArea(string name)
+        {
+            try
+            {
+                using (SqlConnection sqlConnection = new SqlConnection(ConnectionString))
+                {
+                    sqlConnection.Open();
+                    string queryString = @"INSERT INTO ManufacturingAreas (Name) VALUES (@name)";
+
+                    using (SqlCommand command = new SqlCommand(queryString, sqlConnection))
+                    {
+                        command.Parameters.AddWithValue("@name", name);
+                        command.ExecuteNonQuery();
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+        }
+
+        public static void StoreGeoLocation(string name)
+        {
+            try
+            {
+                using (SqlConnection sqlConnection = new SqlConnection(ConnectionString))
+                {
+                    sqlConnection.Open();
+                    string queryString = @"INSERT INTO Locations (Name) VALUES (@name)";
+
+                    using (SqlCommand command = new SqlCommand(queryString, sqlConnection))
+                    {
+                        command.Parameters.AddWithValue("@name", name);
+                        command.ExecuteNonQuery();
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
             }
         }
     }
