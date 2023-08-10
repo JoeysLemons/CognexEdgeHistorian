@@ -6,6 +6,7 @@ using System.Data.Sql;
 using System.Data.SqlClient;
 using System.Windows.Documents;
 using System.Xml;
+using EdgePcConfigurationApp.Models;
 
 namespace EdgePcConfigurationApp.Helpers
 {
@@ -98,13 +99,13 @@ namespace EdgePcConfigurationApp.Helpers
             }
         }
 
-        public static int AddCamera(string cameraName, string endpoint)
+        public static int AddCamera(string cameraName, string endpoint, int pcID)
         {
             using (SqlConnection SqlConnection = new SqlConnection(ConnectionString))
             {
                 SqlConnection.Open();
                 string checkDuplicate = "SELECT id FROM Cameras WHERE Endpoint = @endpoint";
-                string insertCamera = "INSERT INTO Cameras (Name, Endpoint) VALUES (@cameraName, @endpoint); SELECT SCOPE_IDENTITY();";
+                string insertCamera = "INSERT INTO Cameras (Name, Endpoint, PC_id) VALUES (@cameraName, @endpoint, @pc_ID); SELECT SCOPE_IDENTITY();";
                 using (SqlCommand command = new SqlCommand(checkDuplicate, SqlConnection))
                 {
                     command.Parameters.AddWithValue("@endpoint", endpoint);
@@ -119,6 +120,7 @@ namespace EdgePcConfigurationApp.Helpers
                         {
                             insertCommand.Parameters.AddWithValue("@cameraName", cameraName);
                             insertCommand.Parameters.AddWithValue("@endpoint", endpoint);
+                            insertCommand.Parameters.AddWithValue("@pc_ID", pcID);
                             int newCameraId = Convert.ToInt32(insertCommand.ExecuteScalar());
                             return newCameraId;
                         }
@@ -365,18 +367,71 @@ namespace EdgePcConfigurationApp.Helpers
             }
         }
 
-        public static void StoreManufacturingArea(string name)
+        public static int StoreManufacturingArea(string name)
         {
             try
             {
                 using (SqlConnection sqlConnection = new SqlConnection(ConnectionString))
                 {
                     sqlConnection.Open();
-                    string queryString = @"INSERT INTO ManufacturingAreas (Name) VALUES (@name)";
+                    string queryString = @"INSERT INTO ManufacturingAreas (Name) VALUES (@name); SELECT SCOPE_IDENTITY()";
 
                     using (SqlCommand command = new SqlCommand(queryString, sqlConnection))
                     {
                         command.Parameters.AddWithValue("@name", name);
+                        object manufacturingAreaID = command.ExecuteScalar();
+                        if (manufacturingAreaID != null && manufacturingAreaID != DBNull.Value)
+                            return Convert.ToInt32(manufacturingAreaID);
+                        else return -1;
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+        }
+
+        public static int StoreGeoLocation(string name)
+        {
+            try
+            {
+                using (SqlConnection sqlConnection = new SqlConnection(ConnectionString))
+                {
+                    sqlConnection.Open();
+                    string queryString = @"INSERT INTO Locations (Name) VALUES (@name); SELECT SCOPE_IDENTITY();";
+
+                    using (SqlCommand command = new SqlCommand(queryString, sqlConnection))
+                    {
+                        command.Parameters.AddWithValue("@name", name);
+                        object locationID = command.ExecuteScalar();
+                        if (locationID != null && locationID != DBNull.Value)
+                            return Convert.ToInt32(locationID);
+                        else return -1;
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+        }
+        public static void LinkPCToLocation(int computerId, int geoLocationId, int manufacturingAreaId)
+        {
+            try
+            {
+                using (SqlConnection sqlConnection = new SqlConnection(ConnectionString))
+                {
+                    sqlConnection.Open();
+                    string queryString = @"INSERT INTO PcLocation (Geo_Location_id, PC_id, Manufacturing_Area_id) VALUES (@geoLocationID, @PC_ID, @ManufacturingAreaID)";
+
+                    using (SqlCommand command = new SqlCommand(queryString, sqlConnection))
+                    {
+                        command.Parameters.AddWithValue("@geoLocationID", geoLocationId);
+                        command.Parameters.AddWithValue("@PC_ID", computerId);
+                        command.Parameters.AddWithValue("@manufacturingAreaID", manufacturingAreaId);
                         command.ExecuteNonQuery();
                     }
                 }
@@ -388,21 +443,61 @@ namespace EdgePcConfigurationApp.Helpers
             }
         }
 
-        public static void StoreGeoLocation(string name)
+        public static int GetPCIdFromGUID(string guid)
         {
             try
             {
                 using (SqlConnection sqlConnection = new SqlConnection(ConnectionString))
                 {
                     sqlConnection.Open();
-                    string queryString = @"INSERT INTO Locations (Name) VALUES (@name)";
+                    string queryString = @"SELECT id FROM COMPUTERS WHERE GUID = @guid";
 
                     using (SqlCommand command = new SqlCommand(queryString, sqlConnection))
                     {
-                        command.Parameters.AddWithValue("@name", name);
-                        command.ExecuteNonQuery();
+                        command.Parameters.AddWithValue("@guid", guid);
+                        using (SqlDataReader reader = command.ExecuteReader())
+                        {
+                            return reader.Read() ? reader.GetInt32(0) : -1;
+                        }
                     }
                 }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+        }
+
+        public static List<CameraInfo> GetpreviouslyConnectedCameras(int pcID)
+        {
+            try
+            {
+                DataTable results = new DataTable();
+                List<CameraInfo> cameras = new List<CameraInfo>();
+                using (SqlConnection sqlConnection = new SqlConnection(ConnectionString))
+                {
+                    sqlConnection.Open();
+                    string queryString = @"SELECT Endpoint, Name FROM Cameras WHERE PC_id = @pcID";
+
+                    using (SqlCommand command = new SqlCommand(queryString, sqlConnection))
+                    {
+                        command.Parameters.AddWithValue("@pcID", pcID);
+                        using (SqlDataAdapter adapter = new SqlDataAdapter(command))
+                        {
+                            adapter.Fill(results);
+                        }
+                    }
+            
+                    foreach (DataRow row in results.Rows)
+                    {
+                        string name = row["Name"].ToString();
+                        string endpoint = row["Endpoint"].ToString();
+                        cameras.Add(new CameraInfo(endpoint, name));
+                    }
+                }
+
+                return cameras;
             }
             catch (Exception e)
             {

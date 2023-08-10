@@ -1,4 +1,5 @@
-﻿using System.Xml;
+﻿using System;
+using System.Xml;
 
 namespace EdgePcConfigurationApp.Helpers;
 
@@ -6,7 +7,7 @@ public class FirstTimeSetupUtils
 {
     private static string xmlFilePath = "../../../AppSettings.xml";
 
-    public static void RegisterComputer()
+    public static int RegisterComputer()
     {
         //Checks to see whether the PC has been assigned a GUID and if it has it then checks to make sure that GUID is saved in the database
         //If either of these conditions are not met the application will generate and assign a GUID to the PC
@@ -32,5 +33,10 @@ public class FirstTimeSetupUtils
             GUID = DatabaseUtils.StoreComputer();
             pcSettings.SelectSingleNode("ComputerGUID").InnerText = GUID;
         }
+
+        doc.Save(xmlFilePath);
+        int pcID = DatabaseUtils.GetPCIdFromGUID(GUID);
+        if (pcID == -1) throw new Exception("No PC with a matching GUID was found in the database");
+        return pcID;
     }
 }

@@ -21,9 +21,10 @@ using System.Windows.Media.Media3D;
 using EdgePcConfigurationApp.Views;
 using EdgePcConfigurationApp.Views.Pages;
 using EdgePcConfigurationApp.Views.Windows;
+using Wpf.Ui.Common;
 using Wpf.Ui.Common.Interfaces;
 using Wpf.Ui.Controls;
-using MessageBox = System.Windows.MessageBox;
+using MessageBox = Wpf.Ui.Controls.MessageBox;
 using Session = Opc.Ua.Client.Session;
 
 namespace EdgePcConfigurationApp.ViewModels
@@ -90,9 +91,24 @@ namespace EdgePcConfigurationApp.ViewModels
             ConnectToCamera(cameraInfo);
         }
         
-
+        //Looks for cameras assigned to this PC and if detected will autoconnect to them.
+        public async Task SearchForPreviousCameras()
+        {
+            string computerGuid = AppConfigUtils.GetComputerGUID();
+            int pcID = DatabaseUtils.GetPCIdFromGUID(computerGuid);
+            List<CameraInfo> previousCameras = DatabaseUtils.GetpreviouslyConnectedCameras(pcID);
+            foreach (CameraInfo cameraInfo in previousCameras)
+            {
+                if (CognexCameras.Any(c => c.Endpoint == cameraInfo.IpAddress))
+                    continue;
+                await ConnectToCamera(cameraInfo);
+            }
+        }
         //Leaving these here to implement the INavigationAware Interface. May possibly use these in the future 
-        public void OnNavigatedTo() { }
+        public void OnNavigatedTo()
+        {
+            Task.Run(SearchForPreviousCameras);
+        }
         public void OnNavigatedFrom() { }
 
         
@@ -109,7 +125,10 @@ namespace EdgePcConfigurationApp.ViewModels
             {
                 bool connected = false;
                 CognexCamera camera = new CognexCamera(cameraInfo.Name, ipAddress); //Create a new instance of a CognexCamera
-                CognexCameras.Add(camera);  //Add camera to list of connected cameras
+                App.Current.Dispatcher.Invoke(() =>
+                {
+                    CognexCameras.Add(camera);  //Add camera to list of connected cameras
+                });
                 ReferenceDescriptionCollection references;
                 var opcConfig = OPCUAUtils.CreateApplicationConfiguration();    //Create OPC UA App Config
                 await OPCUAUtils.InitializeApplication();                       //Initialize OPC UA Client using app config
@@ -140,7 +159,9 @@ namespace EdgePcConfigurationApp.ViewModels
                         uint.MaxValue,
                         out continuationPoint,
                         out references);
-                    int cameraId = DatabaseUtils.AddCamera(session.SessionName, ipAddress);      //Adds the camera to the database if not already there. This is so that if the camera is connected to again config data can be loaded
+                    string pcGUID = AppConfigUtils.GetComputerGUID();
+                    int pcID = DatabaseUtils.GetPCIdFromGUID(pcGUID);
+                    int cameraId = DatabaseUtils.AddCamera(cameraInfo.Name, ipAddress, pcID);      //Adds the camera to the database if not already there. This is so that if the camera is connected to again config data can be loaded
                     camera.Session = session;
                     camera.CameraID = cameraId;
                     camera.References = references;
@@ -278,8 +299,9 @@ namespace EdgePcConfigurationApp.ViewModels
         [RelayCommand]
         public void Debug()
         {
+            
         }
-
+        
         [RelayCommand]
         public void OpenAddCameraDialog()
         {
@@ -418,6 +440,37 @@ namespace EdgePcConfigurationApp.ViewModels
             }
         }
 
+        private string GetJobName(ObservableCollection<Tag> tags)
+        {
+            List<Tag> results = new List<Tag>();
+            string searchParam = "System";
+            foreach (Tag tag in tags)
+            {
+                if (tag.Name == searchParam)
+                {
+                    results = new List<Tag>(tag.Children);
+                    break;
+                }
+                else if(tag.Children.Count > 0)
+                {
+                    ObservableCollection<Tag> children = new ObservableCollection<Tag>(tag.Children);
+                    GetJobName(children);
+                }
+            }
+
+            if (results.Count == 0) return "Job Not Found";
+                
+            foreach (Tag tag in results)
+            {
+                if (tag.Name == "JobName")
+                {
+                    return tag.Value.ToString();
+                }
+            }
+
+            return "Job Not Found";
+        }
+
         public static void DisconnectFromAllDevices(ObservableCollection<CognexCamera> deviceList)
         {
             foreach(CognexCamera camera in deviceList)
@@ -446,6 +499,8 @@ namespace EdgePcConfigurationApp.ViewModels
                         }
                     }
                     SearchTag(SelectedCamera.Tags, "Spreadsheet");
+                    //This is broken need to actually dive into the OPC node itself and pull the value from the server not just from the tag list
+                    //jobName = GetJobName(selectedCamera.Tags);
                 }
                     
             }

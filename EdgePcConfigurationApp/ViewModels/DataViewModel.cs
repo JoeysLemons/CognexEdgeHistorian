@@ -18,12 +18,16 @@ namespace EdgePcConfigurationApp.ViewModels
         public void OnNavigatedFrom(){}
         private string xmlFilePath = "../../../AppSettings.xml";
 
+        //observable properties
         [ObservableProperty]
         private string? connectionString;
         [ObservableProperty]
         private string? geoLocation;
         [ObservableProperty]
         private string? manufacturingArea;
+        
+        //vars
+        private int pcID;
 
         [ObservableProperty] private string dbConnected = "Disconnected";
 
@@ -61,11 +65,11 @@ namespace EdgePcConfigurationApp.ViewModels
                 if (connected)
                 {
                     //check to see if computer is registered if not computer will be added to database with a GUID and saved locally in the config file
-                    FirstTimeSetupUtils.RegisterComputer();
+                    pcID = FirstTimeSetupUtils.RegisterComputer();
                     //store all location information
-                    DatabaseUtils.StoreGeoLocation(geoLocation);
-                    DatabaseUtils.StoreManufacturingArea(manufacturingArea);
-                    //todo: Link all the data together PC, ManufacturingArea, and GeoLocation in the PcLocation Table
+                    int geoLocationID = DatabaseUtils.StoreGeoLocation(geoLocation);
+                    int manufacturingAreaID = DatabaseUtils.StoreManufacturingArea(manufacturingArea);
+                    DatabaseUtils.LinkPCToLocation(pcID, geoLocationID, manufacturingAreaID);
                 }
 
             }

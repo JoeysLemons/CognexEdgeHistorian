@@ -1,0 +1,18 @@
+﻿<ui:MessageBox x:Class="EdgePcConfigurationApp.Views.Windows.ErrorPopup"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:EdgePcConfigurationApp.Views.Windows"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             mc:Ignorable="d"
+             d:Background="{DynamicResource ApplicationBackgroundBrush}"
+             Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+             WindowStartupLocation="CenterScreen"
+             WindowStyle="None"
+             SizeToContent="WidthAndHeight"
+             ResizeMode="CanResizeWithGrip"
+             Title="ErrorPopup" Height="200" Width="400">
+    <Grid>
+    </Grid>
+</ui:MessageBox>

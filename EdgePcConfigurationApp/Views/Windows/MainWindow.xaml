@@ -52,6 +52,7 @@
                 </ui:NotifyIcon>
             </ui:TitleBar.Tray>
         </ui:TitleBar>
+        <ui:Dialog></ui:Dialog>
 
         <Grid Grid.Column="1">
             <Border
