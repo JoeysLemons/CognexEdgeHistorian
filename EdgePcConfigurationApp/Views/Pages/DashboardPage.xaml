@@ -90,7 +90,7 @@
             <TextBlock Text="Loaded Job:"
                        FontSize="14"
                        Margin="15 0 0 0"/>
-            <TextBlock Text="{Binding ViewModel.JobName}"
+            <TextBlock Text="{Binding ViewModel.JobName, UpdateSourceTrigger=PropertyChanged}"
                        FontSize="14"
                        Margin="5 0"/>
         </StackPanel>

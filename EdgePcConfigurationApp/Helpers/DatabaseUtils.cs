@@ -505,5 +505,63 @@ namespace EdgePcConfigurationApp.Helpers
                 throw;
             }
         }
+
+        /// <summary>
+        /// This method will return the job ID associated with a specified job name. If no job is found a value of -1 is returned
+        /// </summary>
+        /// <param name="jobName">The name of the job you would like the ID of</param>
+        /// <returns>The ID column for the job you specified. If no job is found -1 is returned</returns>
+        public static int GetJobIdFromName(string jobName)
+        {
+            try
+            {
+                using (SqlConnection sqlConnection = new SqlConnection(ConnectionString))
+                {
+                    sqlConnection.Open();
+                    string queryString = @"SELECT id FROM Jobs WHERE Job_Name = @jobName";
+
+                    using (SqlCommand command = new SqlCommand(queryString, sqlConnection))
+                    {
+                        command.Parameters.AddWithValue("@jobName", jobName);
+                        using (SqlDataReader reader = command.ExecuteReader())
+                        {
+                            return reader.Read() ? reader.GetInt32(0) : -1;
+                        }
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+        }
+
+        public static int StoreJob(string jobName, int cameraID)
+        {
+            try
+            {
+                using (SqlConnection sqlConnection = new SqlConnection(ConnectionString))
+                {
+                    sqlConnection.Open();
+                    string queryString = @"INSERT INTO Jobs (Job_Name, Camera_id) VALUES (@jobName, @cameraID); SELECT SCOPE_IDENTITY();";
+                    
+                    using (SqlCommand command = new SqlCommand(queryString, sqlConnection))
+                    {
+                        command.Parameters.AddWithValue("@jobName", jobName);
+                        command.Parameters.AddWithValue("@cameraID", cameraID);
+                        object jobID = command.ExecuteScalar();
+                        if (jobID != null && jobID != DBNull.Value)
+                            return Convert.ToInt32(jobID);
+                        else return -1;
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+        }
     }
 }

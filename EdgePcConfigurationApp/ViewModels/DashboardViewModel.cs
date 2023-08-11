@@ -47,9 +47,10 @@ namespace EdgePcConfigurationApp.ViewModels
                 UpdateTagBrowser();
             }
         }
-
-        [ObservableProperty] public string jobName = "No Job Selected";
         
+
+        [ObservableProperty] private string selectedJob = "No Job Selected";
+
         [ObservableProperty]
         public bool isCameraSettingsOpen;
 
@@ -125,10 +126,6 @@ namespace EdgePcConfigurationApp.ViewModels
             {
                 bool connected = false;
                 CognexCamera camera = new CognexCamera(cameraInfo.Name, ipAddress); //Create a new instance of a CognexCamera
-                App.Current.Dispatcher.Invoke(() =>
-                {
-                    CognexCameras.Add(camera);  //Add camera to list of connected cameras
-                });
                 ReferenceDescriptionCollection references;
                 var opcConfig = OPCUAUtils.CreateApplicationConfiguration();    //Create OPC UA App Config
                 await OPCUAUtils.InitializeApplication();                       //Initialize OPC UA Client using app config
@@ -166,6 +163,10 @@ namespace EdgePcConfigurationApp.ViewModels
                     camera.CameraID = cameraId;
                     camera.References = references;
                     camera.HostName = session.SessionName;
+                    App.Current.Dispatcher.Invoke(() =>
+                    {
+                        CognexCameras.Add(camera);  //Add camera to list of connected cameras
+                    });
                 }
                 
                 
@@ -252,10 +253,11 @@ namespace EdgePcConfigurationApp.ViewModels
             try
             {
                 DatabaseUtils.ResetTagMonitoredStatus(SelectedCamera.CameraID);
+                int jobID = DatabaseUtils.GetJobIdFromName(SelectedJob);
                 foreach (Tag tag in SelectedCamera.SubscribedTags)
                 {
-                    tag.TagId = DatabaseUtils.AddTag(SelectedCamera.CameraID, tag.Name, tag.NodeId);
-                    DatabaseUtils.UpdateTagMonitoredStatus(tag.Name, SelectedCamera.CameraID, 1);
+                    tag.TagId = DatabaseUtils.AddTag(jobID, tag.Name, tag.NodeId);
+                    DatabaseUtils.UpdateTagMonitoredStatus(tag.Name, jobID, 1);
                 }
                 ResetSyncIcons(Tags);
             }
@@ -439,11 +441,19 @@ namespace EdgePcConfigurationApp.ViewModels
                 }
             }
         }
-
+        
+        /// <summary>
+        /// Given a list of all the OPC tags on a camera this method will search through that list and find the currently loaded
+        /// job name.
+        /// </summary>
+        /// <param name="tags">A list of all the tags in a cameras OPC server</param>
+        /// <returns>A string containing the currently loaded job name</returns>
         private string GetJobName(ObservableCollection<Tag> tags)
         {
             List<Tag> results = new List<Tag>();
             string searchParam = "System";
+            string result = "Job Not Found";
+            //search for the JobName tag
             foreach (Tag tag in tags)
             {
                 if (tag.Name == searchParam)
@@ -454,21 +464,30 @@ namespace EdgePcConfigurationApp.ViewModels
                 else if(tag.Children.Count > 0)
                 {
                     ObservableCollection<Tag> children = new ObservableCollection<Tag>(tag.Children);
-                    GetJobName(children);
+                    result = GetJobName(children);
+                    if (result != "Job Not Found") return result;
                 }
             }
 
-            if (results.Count == 0) return "Job Not Found";
+            if (results.Count == 0) return result;
                 
             foreach (Tag tag in results)
             {
                 if (tag.Name == "JobName")
                 {
-                    return tag.Value.ToString();
+                    result = OPCUAUtils.ReadTagValue(SelectedCamera.Session, tag.NodeId).Value.ToString();
+                    Trace.WriteLine(result);
+                    return result;
                 }
             }
 
-            return "Job Not Found";
+            return result;
+        }
+
+        private void RecursionTest()
+        {
+            string testValue = "test";
+            
         }
 
         public static void DisconnectFromAllDevices(ObservableCollection<CognexCamera> deviceList)
@@ -498,9 +517,13 @@ namespace EdgePcConfigurationApp.ViewModels
                             SetTagBrowserConfiguration(SelectedCamera.Tags, tagsNames);
                         }
                     }
+                    //Gets all tags inside the spreadsheet directory in the OPC UA server
                     SearchTag(SelectedCamera.Tags, "Spreadsheet");
-                    //This is broken need to actually dive into the OPC node itself and pull the value from the server not just from the tag list
-                    //jobName = GetJobName(selectedCamera.Tags);
+                    //Reads the loaded job from the OPC UA server and sets that as the currently selected job
+                    SelectedJob = GetJobName(selectedCamera.Tags);
+                    DatabaseUtils.StoreJob(SelectedJob, SelectedCamera.CameraID);
+                    //adds the job to the list of jobs in the camera Dont know if we really need this here but here it is anyways
+                    SelectedCamera.jobs.Add(SelectedJob);
                 }
                     
             }

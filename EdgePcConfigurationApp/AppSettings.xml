@@ -3,11 +3,10 @@
 <AppSettings>
   <Database>
     <ConnectionString>Data Source=(localdb)\EdgeHistorian;Initial Catalog=EdgeHistorian;Integrated Security=True</ConnectionString>
-    <Provider>System.Data.SqlClient</Provider>
   </Database>
   <PCSettings>
-    <GeographicLocation>AdamsTestingGeo</GeographicLocation>
-    <ManufacturingArea>AdamsTesting</ManufacturingArea>
-    <ComputerGUID>4a9dbda7-93cd-4aba-bca5-251f3f46b711</ComputerGUID>
+    <GeographicLocation>Tampa</GeographicLocation>
+    <ManufacturingArea>Adams Testing</ManufacturingArea>
+    <ComputerGUID>2fe3b58d-d369-4f3b-892d-8e5a4cf00a4c</ComputerGUID>
   </PCSettings>
 </AppSettings>

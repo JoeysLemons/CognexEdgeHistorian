@@ -196,6 +196,38 @@ namespace EdgePcConfigurationApp.Helpers
             Console.WriteLine(nodeIdInteger);
             return nodeIdInteger;
         }
+        
+        public static DataValue ReadTagValue(Session session, NodeId nodeId)
+        {
+            ReadValueId nodeToRead = new ReadValueId
+            {
+                NodeId = nodeId,
+                AttributeId = Attributes.Value
+            };
+
+            ReadValueIdCollection nodesToRead = new ReadValueIdCollection();
+            nodesToRead.Add(nodeToRead);
+
+            DataValueCollection results;
+            DiagnosticInfoCollection diagnosticInfos;
+
+            session.Read(
+                null,
+                0,
+                TimestampsToReturn.Both,
+                nodesToRead,
+                out results,
+                out diagnosticInfos);
+
+            if (StatusCode.IsGood(results[0].StatusCode))
+            {
+                return results[0];
+            }
+            else
+            {
+                throw new Exception($"Failed to read tag value. Status: {results[0].StatusCode}");
+            }
+        }
 
     }
 }

@@ -26,6 +26,7 @@ namespace EdgePcConfigurationApp.Models
         public string Region { get; set; }
         public string Location { get; set; }
         public string ProductionLine { get; set; }
+        public List<string> jobs { get; set; } = new List<string>();
         public ReferenceDescriptionCollection References { get; set; }
         private ObservableCollection<Tag> _tags;
 
