@@ -55,6 +55,11 @@
     <Page Remove="Views\Test.xaml" />
     <Page Remove="Views\Pages\CameraInfoPage.xaml" />
     <Page Remove="Views\Pages\ConnectionsPage.xaml" />
+    <Page Update="Views\Windows\CameraModifyWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <XamlRuntime>Wpf</XamlRuntime>
+      <SubType>Designer</SubType>
+    </Page>
   </ItemGroup>
 
   <ItemGroup>

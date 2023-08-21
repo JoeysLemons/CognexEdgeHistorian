@@ -18,9 +18,11 @@ using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Media3D;
+using System.Windows.Threading;
 using EdgePcConfigurationApp.Views;
 using EdgePcConfigurationApp.Views.Pages;
 using EdgePcConfigurationApp.Views.Windows;
+using Microsoft.AspNetCore.Http;
 using Wpf.Ui.Common;
 using Wpf.Ui.Common.Interfaces;
 using Wpf.Ui.Controls;
@@ -32,12 +34,14 @@ namespace EdgePcConfigurationApp.ViewModels
     public partial class DashboardViewModel : ObservableObject, INavigationAware
     {
         // Used to keep track of all the cameras currently connected
-        public static ObservableCollection<CognexCamera> CognexCameras { get; set; } = new ObservableCollection<CognexCamera>();
-        [ObservableProperty]
-        private string? endpoint;   //Holds text that is in the IP address box
+        public static ObservableCollection<CognexCamera> CognexCameras { get; set; } =
+            new ObservableCollection<CognexCamera>();
+
+        [ObservableProperty] private string? endpoint; //Holds text that is in the IP address box
 
         //Holds the currently selected camera
         private CognexCamera? selectedCamera;
+
         public CognexCamera SelectedCamera
         {
             get { return selectedCamera; }
@@ -47,15 +51,15 @@ namespace EdgePcConfigurationApp.ViewModels
                 UpdateTagBrowser();
             }
         }
-        
+
 
         [ObservableProperty] private string selectedJob = "No Job Selected";
 
-        [ObservableProperty]
-        public bool isCameraSettingsOpen;
+        [ObservableProperty] public bool isCameraSettingsOpen;
 
         //Holds the collection of tags that should be currently displayed in the tag browser
         private ObservableCollection<Tag> _tags = new ObservableCollection<Tag>();
+
         public ObservableCollection<Tag> Tags
         {
             get { return _tags; }
@@ -65,15 +69,17 @@ namespace EdgePcConfigurationApp.ViewModels
                 OnPropertyChanged(nameof(Tags));
             }
         }
+
         //! I think this could be obsolete but im too scared to remove it
         private static bool changesSaved { get; set; } = true;
 
         //Holds the current error message that should be displayed in the error log. If this string is empty the error log is not visible
         private string errorMessage = string.Empty;
+
         public string ErrorMessage
         {
             get { return errorMessage; }
-            set 
+            set
             {
                 errorMessage = value;
                 OnPropertyChanged(nameof(ErrorMessage));
@@ -87,11 +93,15 @@ namespace EdgePcConfigurationApp.ViewModels
             get { return !string.IsNullOrEmpty(errorMessage); }
         }
 
+        public bool DefaultTagError { get; set; } = false;
+
         public void AddCamera(CameraInfo cameraInfo)
         {
-            ConnectToCamera(cameraInfo);
+            CognexCamera camera = new CognexCamera(cameraInfo.Name, cameraInfo.IpAddress);
+            CognexCameras.Add(camera);
+            Task.Run(() => ConnectToCamera(camera));
         }
-        
+
         //Looks for cameras assigned to this PC and if detected will autoconnect to them.
         public async Task SearchForPreviousCameras()
         {
@@ -102,37 +112,64 @@ namespace EdgePcConfigurationApp.ViewModels
             {
                 if (CognexCameras.Any(c => c.Endpoint == cameraInfo.IpAddress))
                     continue;
-                await ConnectToCamera(cameraInfo);
+                CognexCamera camera = new CognexCamera(cameraInfo.Name, cameraInfo.IpAddress);
+
+                App.Current.Dispatcher.Invoke(() =>
+                {
+                    CognexCameras.Add(camera); //Add camera to list of connected cameras
+                });
+            }
+
+            foreach (CognexCamera camera in CognexCameras)
+            {
+                if (!camera.Connected)
+                    Task.Run(() => ConnectToCamera(camera));
             }
         }
+
         //Leaving these here to implement the INavigationAware Interface. May possibly use these in the future 
         public void OnNavigatedTo()
         {
             Task.Run(SearchForPreviousCameras);
         }
-        public void OnNavigatedFrom() { }
 
-        
+        public void OnNavigatedFrom()
+        {
+        }
 
+
+        public async Task Refresh()
+        {
+            foreach (CognexCamera camera in CognexCameras)
+            {
+                if (!camera.Connected && !camera.Connecting)
+                    Task.Run(() => ConnectToCamera(camera));
+            }    
+        }
 
         #region RelayCommands
+
         //Connect to camera command
-        
-        private async Task ConnectToCamera(CameraInfo cameraInfo)
+
+        public async Task ConnectToCamera(CognexCamera camera)
         {
-            string ipAddress = cameraInfo.IpAddress;
-            Trace.WriteLine($"Endpoint: {ipAddress}");
+            Trace.WriteLine($"Endpoint: {camera.Endpoint}");
             try
             {
                 bool connected = false;
-                CognexCamera camera = new CognexCamera(cameraInfo.Name, ipAddress); //Create a new instance of a CognexCamera
+                App.Current.Dispatcher.Invoke(() =>
+                {
+                    camera.Connecting = true;
+                });
+                
                 ReferenceDescriptionCollection references;
-                var opcConfig = OPCUAUtils.CreateApplicationConfiguration();    //Create OPC UA App Config
-                await OPCUAUtils.InitializeApplication();                       //Initialize OPC UA Client using app config
+                var opcConfig = OPCUAUtils.CreateApplicationConfiguration(); //Create OPC UA App Config
+                await OPCUAUtils.InitializeApplication(); //Initialize OPC UA Client using app config
                 Session session = null;
                 try
                 {
-                    session = await OPCUAUtils.ConnectToServer(opcConfig, $"opc.tcp://{ipAddress}:4840");    //Connect to Cognex OPC UA Server via the endpoint which is retrieved from the endpoint textbox
+                    session = await OPCUAUtils.ConnectToServer(opcConfig,
+                        $"opc.tcp://{camera.Endpoint}:4840"); //Connect to Cognex OPC UA Server via the endpoint which is retrieved from the endpoint textbox
                     connected = true;
                 }
                 catch (Opc.Ua.ServiceResultException ex)
@@ -143,7 +180,7 @@ namespace EdgePcConfigurationApp.ViewModels
                 if (connected && session != null)
                 {
                     //Browse through the top level tags on the server
-                    
+
                     Byte[] continuationPoint;
                     session.Browse(
                         null,
@@ -158,29 +195,36 @@ namespace EdgePcConfigurationApp.ViewModels
                         out references);
                     string pcGUID = AppConfigUtils.GetComputerGUID();
                     int pcID = DatabaseUtils.GetPCIdFromGUID(pcGUID);
-                    int cameraId = DatabaseUtils.AddCamera(cameraInfo.Name, ipAddress, pcID);      //Adds the camera to the database if not already there. This is so that if the camera is connected to again config data can be loaded
+                    int cameraId =
+                        DatabaseUtils.AddCamera(camera.Name, camera.Endpoint,
+                            pcID); //Adds the camera to the database if not already there. This is so that if the camera is connected to again config data can be loaded
                     camera.Session = session;
                     camera.CameraID = cameraId;
                     camera.References = references;
                     camera.HostName = session.SessionName;
-                    App.Current.Dispatcher.Invoke(() =>
-                    {
-                        CognexCameras.Add(camera);  //Add camera to list of connected cameras
-                    });
                 }
+
                 
-                
-                
+                App.Current.Dispatcher.Invoke(() =>
+                {
+                    camera.Connected = connected;
+                    camera.Connecting = false;
+                });
             }
-            catch(InvalidOperationException ex)
+            catch (InvalidOperationException ex)
             {
-                ErrorMessage = "An error was encounted while attempting to communicate to the database. Please double check connection string.";
-                Trace.WriteLine($"An error was encountered while attempting to communicate with the database. \nError Message: {ex.Message}");
+                ErrorMessage =
+                    "An error was encounted while attempting to communicate to the database. Please double check connection string.";
+                Trace.WriteLine(
+                    $"An error was encountered while attempting to communicate with the database. \nError Message: {ex.Message}");
+                camera.Connecting = false;
             }
             catch (Exception ex)
             {
-                ErrorMessage = "We encountered an error while attempting to connect to the camera. Please double check connections and IP Address then try again.";
+                ErrorMessage =
+                    "We encountered an error while attempting to connect to the camera. Please double check connections and IP Address then try again.";
                 Trace.WriteLine($"Error while attempting to connect to camera. Error Message: {ex.Message}");
+                camera.Connecting = false;
             }
         }
 
@@ -192,21 +236,31 @@ namespace EdgePcConfigurationApp.ViewModels
             try
             {
                 var result = CognexCameras.FirstOrDefault(s => s.Endpoint == SelectedCamera.Endpoint);
-                result.Tags.Clear();
+                result.Tags?.Clear();
+                result.Session?.Close();
                 result.Session?.Dispose();
+                result.Connected = false;
                 Tags.Clear();
-                CognexCameras.Remove(result);
             }
             catch (NullReferenceException)
             {
-                ErrorMessage = "Selected Camera was null or the list of cameras is empty. Please make sure you are connected to a device before attempting to disconnect";
+                ErrorMessage =
+                    "Selected Camera was null or the list of cameras is empty. Please make sure you are connected to a device before attempting to disconnect";
                 Trace.WriteLine("Selected Camera was null or the list CognexCameras is empty");
             }
             catch (Exception ex)
             {
-                ErrorMessage = $"We encountered an error while attempting to disconnect from the camera. \nError Message: {ex.Message}";
-                Trace.WriteLine($"Error while attempting to disconnect from OPC UA server. \nError Message: {ex.Message}\nStack Trace: {ex.StackTrace}");
+                ErrorMessage =
+                    $"We encountered an error while attempting to disconnect from the camera. \nError Message: {ex.Message}";
+                Trace.WriteLine(
+                    $"Error while attempting to disconnect from OPC UA server. \nError Message: {ex.Message}\nStack Trace: {ex.StackTrace}");
             }
+        }
+        
+        [RelayCommand]
+        public void RefreshCameras()
+        {
+            Task.Run(Refresh);
         }
 
         [RelayCommand]
@@ -273,6 +327,9 @@ namespace EdgePcConfigurationApp.ViewModels
         {
             if (SelectedCamera is null)
                 return;
+            if (SelectedCamera.Tags == null || SelectedCamera.Tags.Count == 0)
+                return;
+
             if (DatabaseUtils.CameraExists(SelectedCamera.Endpoint))
             {
                 List<string> tagsNames = DatabaseUtils.GetSavedTagConfiguration(SelectedCamera.Endpoint);
@@ -281,7 +338,9 @@ namespace EdgePcConfigurationApp.ViewModels
                     SetTagBrowserConfiguration(SelectedCamera.Tags, tagsNames);
                 }
             }
-            SearchTag(SelectedCamera.Tags, "Spreadsheet");
+
+            bool insightExplorer = CheckInsightExplorer(selectedCamera.Tags);
+            SearchTag(SelectedCamera.Tags, insightExplorer ? "Jobtags" : "Spreadsheet");
             ResetSyncIcons(Tags);
         }
 
@@ -294,8 +353,8 @@ namespace EdgePcConfigurationApp.ViewModels
         public void SetCameraSettings(object parameter)
         {
             CognexCamera camera = parameter as CognexCamera;
-            CameraSettingsWindow cameraSettingsWindow = new CameraSettingsWindow();
-            cameraSettingsWindow.DataContext = new CameraInfoViewModel(cameraSettingsWindow, this, camera);
+            CameraModifyWindow cameraSettingsWindow = new CameraModifyWindow();
+            cameraSettingsWindow.DataContext = new CameraModifyViewModel(cameraSettingsWindow, this, camera);
             cameraSettingsWindow.ShowDialog();
         }
         [RelayCommand]
@@ -307,7 +366,7 @@ namespace EdgePcConfigurationApp.ViewModels
         [RelayCommand]
         public void OpenAddCameraDialog()
         {
-            CameraSettingsWindow cameraSettingsWindow = new CameraSettingsWindow();
+            CameraAddWindow cameraSettingsWindow = new CameraAddWindow();
             cameraSettingsWindow.DataContext = new CameraInfoViewModel(cameraSettingsWindow, this);
             cameraSettingsWindow.ShowDialog();
         }
@@ -483,13 +542,6 @@ namespace EdgePcConfigurationApp.ViewModels
 
             return result;
         }
-
-        private void RecursionTest()
-        {
-            string testValue = "test";
-            
-        }
-
         public static void DisconnectFromAllDevices(ObservableCollection<CognexCamera> deviceList)
         {
             foreach(CognexCamera camera in deviceList)
@@ -498,11 +550,46 @@ namespace EdgePcConfigurationApp.ViewModels
                 camera.Session?.Dispose();
             }
         }
+
+        public bool CheckDefaultTagError()
+        {
+            bool found = false;
+            string acquisitionCount = "AcquisitionCount";
+            string imageFileName = "ImageFileName";
+            var acqCountTag = Tags.FirstOrDefault(tag => tag.Name == acquisitionCount);
+            var imgFileNameTag = Tags.FirstOrDefault(tag => tag.Name == imageFileName);
+
+            if (acqCountTag is null || imgFileNameTag is null)
+                found = true;
+            
+            return found;
+        }
+
+        private bool CheckInsightExplorer(ObservableCollection<Tag> tags)
+        {
+            if (tags == null)
+                return false;
+            foreach (Tag tag in tags)
+            {
+                if (tag.Name == "SystemTags")
+                    return true;
+                else if(tag.Children.Count > 0)
+                {
+                    ObservableCollection<Tag> children = new ObservableCollection<Tag>(tag.Children);
+                    if (CheckInsightExplorer(children))
+                        return true; // Stop and return true if found in children
+                }
+            }
+
+            return false;
+
+        }
+        
         public async void UpdateTagBrowser()
         {
             try
             {
-                if (SelectedCamera != null)
+                if (SelectedCamera != null && SelectedCamera.Connected)
                 {
                     SelectedCamera.Tags = await BrowseChildren(SelectedCamera.Session, SelectedCamera.References);
                     if (selectedCamera.Tags == null)
@@ -518,13 +605,18 @@ namespace EdgePcConfigurationApp.ViewModels
                         }
                     }
                     //Gets all tags inside the spreadsheet directory in the OPC UA server
-                    SearchTag(SelectedCamera.Tags, "Spreadsheet");
+                    bool insightExplorer = CheckInsightExplorer(selectedCamera.Tags);
+                    SearchTag(SelectedCamera.Tags, insightExplorer ? "JobTags" : "Spreadsheet");
+
+                    DefaultTagError = CheckDefaultTagError();
                     //Reads the loaded job from the OPC UA server and sets that as the currently selected job
                     SelectedJob = GetJobName(selectedCamera.Tags);
                     DatabaseUtils.StoreJob(SelectedJob, SelectedCamera.CameraID);
                     //adds the job to the list of jobs in the camera Dont know if we really need this here but here it is anyways
                     SelectedCamera.jobs.Add(SelectedJob);
                 }
+                else
+                    Tags.Clear();
                     
             }
             catch(NullReferenceException)

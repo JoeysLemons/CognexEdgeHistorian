@@ -21,6 +21,7 @@
     <ui:UiPage.Resources>
         <Color x:Key="TextOnAccentFillColorPrimary">#FFFF</Color>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverterInverse" />
     </ui:UiPage.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
@@ -38,54 +39,91 @@
             <ui:Button
                 Margin="10 0 5 0"
                 Command="{Binding ViewModel.OpenAddCameraDialogCommand}"
-                Content="+ Add New Camera"/>
+                Content="Add New Camera"
+                Icon="Add20"/>
             <ui:Button
                 Margin="5"
                 Command="{Binding ViewModel.DisconnectFromCameraCommand}"
                 CommandParameter="{Binding ElementName=DeviceConnectionPane, Path=SelectedItem}"
-                Content="Disconnect" />
+                Content="Disconnect"
+                Icon="PlugDisconnected20"/>
+            <ui:Button
+                Margin="5"
+                Command="{Binding ViewModel.RefreshCamerasCommand}"
+                Content="Refresh"
+                Icon="ArrowSync20"/>
             <ui:Button
                 Margin="5"
                 Command="{Binding ViewModel.ResetTagBrowserCommand}"
-                Content="Reset" />
+                Content="Reset" 
+                Icon="ArrowReset20"/>
             <ui:Button
                 Margin="5"
                 Command="{Binding ViewModel.ApplyChangesCommand}"
-                Content="Apply Configuration" />
+                Content="Apply Configuration" 
+                Icon="Checkmark20"/>
             <ui:Button Command="{Binding ViewModel.DebugCommand}" Content="Debug" />
         </StackPanel>
         <TextBlock Text="Device Connection Pane" Grid.Row="1" 
                    FontSize="14"
                    Margin="15 0"/>
-        <ListBox
-            x:Name="DeviceConnectionPane"
-            Grid.Row="2"
+        <Border 
+            Background="#393939"
+            CornerRadius="5"
             Margin="10 0 10 10"
+            Grid.Row="2">
+            <ListView
+            x:Name="DeviceConnectionPane"
+            Margin="10"
             VerticalAlignment="Stretch"
             ItemsSource="{Binding ViewModel.CognexCameras}"
             SelectedItem="{Binding ViewModel.SelectedCamera}"
             SelectionMode="Single">
-            <ListBox.ItemTemplate>
+            <ListView.ItemTemplate>
                 <DataTemplate>
-                    <Grid>
+                    <Grid Margin="5">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="40"/>
+                            <ColumnDefinition Width="40"/>
+                            <ColumnDefinition Width="40"/>
                             <ColumnDefinition Width="40"/>
                         </Grid.ColumnDefinitions>
                         <StackPanel>
                             <TextBlock x:Name="SessionName" Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                            <TextBlock x:Name="SessionEndpoint" Text="{Binding Endpoint}" />
+                            <TextBlock x:Name="SessionEndpoint" Text="{Binding Endpoint, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                         </StackPanel>
-                        <Button Grid.Column="1"
+                        <ui:SymbolIcon Grid.Column="1" 
+                                       Symbol="Warning20" 
+                                       Foreground="OrangeRed" 
+                                       ToolTip="One or more of the required tags is missing from the job file currently loaded. Please refer to the cognex setup documentation and add the missing tags."
+                                       Visibility="{Binding DataContext.ViewModel.DefaultTagError, RelativeSource={RelativeSource AncestorType={x:Type ListBox}} ,Converter={StaticResource BooleanToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged}"/>
+                        <ui:ProgressRing Grid.Column="2" 
+                                         IsIndeterminate="True" 
+                                         Height="20" Width="20"
+                                         Visibility="{Binding Connecting, Converter={StaticResource BooleanToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged}"/>
+                        <ui:SymbolIcon Grid.Column="3"
+                                       Symbol="PlugDisconnected20"
+                                       Foreground="OrangeRed"
+                                       ToolTip="Camera is disconnected."
+                                       Visibility="{Binding Disconnected, Converter={StaticResource BooleanToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged}"/>
+                        <ui:SymbolIcon Grid.Column="3"
+                                       Symbol="PlugConnectedCheckmark20"
+                                       Foreground="Lime"
+                                       ToolTip="Camera is connected."
+                                       Visibility="{Binding Connected, Converter={StaticResource BooleanToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged}"/>
+                        
+                        <Button Grid.Column="4"
                                 Command="{Binding DataContext.ViewModel.SetCameraSettingsCommand, RelativeSource={RelativeSource AncestorType={x:Type ListBox}}}"
                                 CommandParameter="{Binding}">
-                            <Image Grid.Column="1" 
-                                   Source="/Assets/icons8-done-48.png"/>
+                            <ui:SymbolIcon Symbol="Settings20"/>
                         </Button>
                     </Grid>
                 </DataTemplate>
-            </ListBox.ItemTemplate>
-        </ListBox>
+            </ListView.ItemTemplate>
+        </ListView>
+        </Border>
+        
         <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal">
             <TextBlock Text="Loaded Job:"
                        FontSize="14"

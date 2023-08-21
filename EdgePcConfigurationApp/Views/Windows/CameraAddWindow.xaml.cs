@@ -3,9 +3,9 @@ using Wpf.Ui.Controls;
 
 namespace EdgePcConfigurationApp.Views.Windows;
 
-public partial class CameraSettingsWindow : UiWindow
+public partial class CameraAddWindow : UiWindow
 {
-    public CameraSettingsWindow()
+    public CameraAddWindow()
     {
         InitializeComponent();
     }
