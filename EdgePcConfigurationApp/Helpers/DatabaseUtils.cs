@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.Sql;
 using System.Data.SqlClient;
+using System.Diagnostics;
 using System.Windows.Documents;
 using System.Xml;
 using EdgePcConfigurationApp.Models;
@@ -99,16 +100,17 @@ namespace EdgePcConfigurationApp.Helpers
             }
         }
 
-        public static int AddCamera(string cameraName, string endpoint, int pcID)
+        public static int AddCamera(string cameraName, string endpoint, string macAddress, int pcID)
         {
             using (SqlConnection SqlConnection = new SqlConnection(ConnectionString))
             {
                 SqlConnection.Open();
-                string checkDuplicate = "SELECT id FROM Cameras WHERE Endpoint = @endpoint";
-                string insertCamera = "INSERT INTO Cameras (Name, Endpoint, PC_id) VALUES (@cameraName, @endpoint, @pc_ID); SELECT SCOPE_IDENTITY();";
+                string checkDuplicate = "SELECT id FROM Cameras WHERE Endpoint = @endpoint AND PC_id = @pcID";
+                string insertCamera = "INSERT INTO Cameras (Name, Endpoint, Mac_Address, PC_id) VALUES (@cameraName, @endpoint, @MacAddress, @pc_ID); SELECT SCOPE_IDENTITY();";
                 using (SqlCommand command = new SqlCommand(checkDuplicate, SqlConnection))
                 {
                     command.Parameters.AddWithValue("@endpoint", endpoint);
+                    command.Parameters.AddWithValue("@pcID", pcID);
                     object existingCameraId = command.ExecuteScalar();
                     if (existingCameraId != null)
                     {
@@ -120,12 +122,62 @@ namespace EdgePcConfigurationApp.Helpers
                         {
                             insertCommand.Parameters.AddWithValue("@cameraName", cameraName);
                             insertCommand.Parameters.AddWithValue("@endpoint", endpoint);
+                            insertCommand.Parameters.AddWithValue("@MacAddress", macAddress);
                             insertCommand.Parameters.AddWithValue("@pc_ID", pcID);
                             int newCameraId = Convert.ToInt32(insertCommand.ExecuteScalar());
                             return newCameraId;
                         }
                     }
                 }
+            }
+        }
+
+        /// <summary>
+        /// This method will update the endpoint of a given camera. This method also checks to make sure that there are no
+        /// other cameras on the current PC with the same IP address. If there are then this method will return false indicating
+        /// that the value of endpoint should not be updated
+        /// </summary>
+        /// <param name="endpoint"></param>
+        /// <param name="camId"></param>
+        /// <returns>A boolean value indicating whether or not the endpoint value is valid or not. False = Invalid, True = Valid</returns>
+        public static bool UpdateCameraEndpoint(string endpoint, int camId)
+        {
+            using (SqlConnection sqlConnection = new SqlConnection(ConnectionString))
+            {
+                sqlConnection.Open();
+                object pcIDObj;
+                int pcID = -1;
+                object duplicateCamera = null;
+                string updateEndpointQuery = "UPDATE Cameras SET Endpoint = @endpoint WHERE id = @camID;";
+                string getPCIdQuery = "SELECT PC_id FROM Cameras WHERE id = @camID";
+                string checkDuplicatesQuery = "SELECT id FROM Cameras WHERE Endpoint = @endpoint AND PC_id = @pcID;";
+                using (SqlCommand command = new SqlCommand(getPCIdQuery, sqlConnection))
+                {
+                    command.Parameters.AddWithValue("@camID", camId);
+                    pcIDObj = command.ExecuteScalar();
+                    if (pcIDObj != null)
+                        pcID = (int)pcIDObj;
+                }
+
+                using (SqlCommand command = new SqlCommand(checkDuplicatesQuery, sqlConnection))
+                {
+                    command.Parameters.AddWithValue("@endpoint", endpoint);
+                    command.Parameters.AddWithValue("@pcID", pcID);
+                    duplicateCamera = command.ExecuteScalar();
+                }
+                
+                //If this result is not null that means that a duplicate entry was found and the method should return false indicating this is not an available endpoint
+                if (duplicateCamera != null)
+                    return false;
+                
+                using (SqlCommand command = new SqlCommand(updateEndpointQuery, sqlConnection))
+                {
+                    command.Parameters.AddWithValue("@endpoint", endpoint);
+                    command.Parameters.AddWithValue("@camID", camId);
+                    command.ExecuteNonQuery();
+                }
+
+                return true;
             }
         }
 
@@ -175,23 +227,20 @@ namespace EdgePcConfigurationApp.Helpers
                 }
             }
         }
-        public static DataTable GetCameraByEndpoint(string endpoint)
+        public static int GetCameraIdByEndpoint(string endpoint)
         {
             using (SqlConnection SqlConnection = new SqlConnection(ConnectionString))
             {
                 SqlConnection.Open();
-                DataTable camera = new DataTable();
-
-                string selectCameraByEndpoint = "SELECT * FROM cameras WHERE camera_endpoint = @endpoint";
+                string selectCameraByEndpoint = "SELECT id FROM Cameras WHERE Endpoint = @endpoint";
                 using (SqlCommand command = new SqlCommand(selectCameraByEndpoint, SqlConnection))
                 {
                     command.Parameters.AddWithValue("@endpoint", endpoint);
-                    using (SqlDataAdapter adapter = new SqlDataAdapter(command))
+                    using (SqlDataReader reader = command.ExecuteReader())
                     {
-                        adapter.Fill(camera);
+                        return reader.Read() ? reader.GetInt32(0) : -1;
                     }
-                }
-                return camera;
+                } 
             }
         }
 
@@ -212,7 +261,7 @@ namespace EdgePcConfigurationApp.Helpers
             }
         }
 
-        public static void ResetTagMonitoredStatus(int cameraId)
+        public static void ResetTagMonitoredStatus(int jobId)
         {
             using (SqlConnection SqlConnection = new SqlConnection(ConnectionString))
             {
@@ -220,7 +269,7 @@ namespace EdgePcConfigurationApp.Helpers
                 string resetMonitoredStatus = "UPDATE MonitoredTags SET Monitored = 0 Where job_id = @jobId;";
                 using (SqlCommand command = new SqlCommand(resetMonitoredStatus, SqlConnection))
                 {
-                    command.Parameters.AddWithValue("@jobId", cameraId);
+                    command.Parameters.AddWithValue("@jobId", jobId);
                     var rowsAffected = command.ExecuteNonQuery();
                     Console.WriteLine($"Rows affected: {rowsAffected.ToString()}");
                 }
@@ -275,23 +324,23 @@ namespace EdgePcConfigurationApp.Helpers
             }
         }
 
-        public static List<string> GetSavedTagConfiguration(string endpoint)
+        public static List<string> GetSavedTagConfiguration(int jobId)
         {
             using (SqlConnection SqlConnection = new SqlConnection(ConnectionString))
             {
                 SqlConnection.Open();
-                string queryString = "SELECT id FROM Cameras WHERE Endpoint = @Endpoint;";
-                int jobId = -1;
-                SqlCommand command = new SqlCommand(queryString, SqlConnection);
-                command.Parameters.AddWithValue("@Endpoint", endpoint);
-
-                using (SqlDataReader reader = command.ExecuteReader())
-                {
-                    if (reader.Read())
-                    {
-                        jobId = reader.GetInt32(0);
-                    }
-                }
+                // string queryString = "SELECT id FROM Cameras WHERE Endpoint = @Endpoint;";
+                // int jobId = -1;
+                // SqlCommand command = new SqlCommand(queryString, SqlConnection);
+                // command.Parameters.AddWithValue("@Endpoint", endpoint);
+                //
+                // using (SqlDataReader reader = command.ExecuteReader())
+                // {
+                //     if (reader.Read())
+                //     {
+                //         jobId = reader.GetInt32(0);
+                //     }
+                // }
 
                 DataTable tags = new DataTable();
                 string getTagNames = @"SELECT Name FROM MonitoredTags WHERE job_id = @job_id AND Monitored = 1";
@@ -544,9 +593,18 @@ namespace EdgePcConfigurationApp.Helpers
                 using (SqlConnection sqlConnection = new SqlConnection(ConnectionString))
                 {
                     sqlConnection.Open();
-                    string queryString = @"INSERT INTO Jobs (Job_Name, Camera_id) VALUES (@jobName, @cameraID); SELECT SCOPE_IDENTITY();";
-                    
-                    using (SqlCommand command = new SqlCommand(queryString, sqlConnection))
+                    string insertJobString = @"INSERT INTO Jobs (Job_Name, Camera_id) VALUES (@jobName, @cameraID); SELECT SCOPE_IDENTITY();";
+                    string checkDuplicateJobString =
+                        @"SELECT id FROM Jobs WHERE Job_Name = @jobName AND Camera_id = @cameraID;";
+                    using (SqlCommand command = new SqlCommand(checkDuplicateJobString, sqlConnection))
+                    {
+                        command.Parameters.AddWithValue("@jobName", jobName);
+                        command.Parameters.AddWithValue("@cameraID", cameraID);
+                        object jobID = command.ExecuteScalar();
+                        if (jobID != null)
+                            return Convert.ToInt32(jobID);
+                    }
+                    using (SqlCommand command = new SqlCommand(insertJobString, sqlConnection))
                     {
                         command.Parameters.AddWithValue("@jobName", jobName);
                         command.Parameters.AddWithValue("@cameraID", cameraID);
@@ -562,6 +620,94 @@ namespace EdgePcConfigurationApp.Helpers
                 Console.WriteLine(e);
                 throw;
             }
+        }
+
+        /// <summary>
+        /// Checks to see if a specific camera has any records associated with it. If there are no records associated
+        /// with the camera this method will return true indicating the camera is safe to be deleted from the database.
+        /// Records are checked by looking for any jobs and monitored tags linked by foriegn keys to this camera.
+        /// </summary>
+        /// <param name="cameraID">The ID of the camera that is to be checked</param>
+        /// <returns>True if camera is safe to be deleted</returns>
+        public static bool CheckIfCameraCanBeDeleted(int cameraID)
+        {
+            bool canDelete = false;
+            DataTable results = new DataTable();
+            List<int> jobIDs = new List<int>();
+            try
+            {
+                string getJobIdsQuery = @"SELECT id FROM Jobs WHERE Camera_id = @cameraID;";
+                string getMonitoredTagsQuery = @"SELECT ";
+                using (SqlConnection sqlConnection = new SqlConnection(ConnectionString))
+                {
+                    sqlConnection.Open();
+                    using (SqlCommand command = new SqlCommand(getJobIdsQuery, sqlConnection))
+                    {
+                        command.Parameters.AddWithValue("@cameraID", cameraID);
+                        using (SqlDataAdapter adapter = new SqlDataAdapter(command))
+                        {
+                            adapter.Fill(results);
+                        }
+
+                        foreach (DataRelation row in results.Rows)
+                        {
+                            jobIDs.Add(Int32.Parse(row.ToString()));
+                        }
+                    }
+
+                    if (jobIDs.Count == 0)
+                    {
+                        return true;
+                    }
+                    
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+            return canDelete;
+        }
+
+        
+        /// <summary>
+        /// This method will attempt to delete a camera from the database. If the camera is successfully delete this method will
+        /// return true. If the camera cannot be deleted this method will return false;
+        /// A camera will not be deleted if there are any foriegn keys linked to the camera. This is intended behavior as this
+        /// would result in a loss of data. If you would want to delete a camera with records the records must first be deleted.
+        /// </summary>
+        /// <param name="cameraID">The ID of the camera you want to delete</param>
+        /// <returns>True if the camera was deleted. False if the camera could not be deleted.</returns>
+        public static bool DeleteCamera(int cameraID)
+        {
+            try
+            {
+                string queryString = "DELETE FROM Cameras WHERE id = @cameraID;";
+                using (SqlConnection sqlConnection = new SqlConnection(ConnectionString))
+                {
+                    sqlConnection.Open();
+                    using (SqlCommand command = new SqlCommand(queryString, sqlConnection))
+                    {
+                        command.Parameters.AddWithValue("@cameraID", cameraID);
+                        command.ExecuteNonQuery();
+                    }
+                }
+            }
+            catch (SqlException e)
+            {
+                Trace.WriteLine(e);
+                Trace.WriteLine(e.InnerException);
+                Trace.WriteLine(e.Message);
+                return false;
+            }
+            catch (Exception e)
+            {
+                Trace.WriteLine(e);
+                throw;
+            }
+
+            return true;
         }
     }
 }

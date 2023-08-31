@@ -23,7 +23,11 @@ namespace CognexEdgeMonitoringService.Models
 		public string NodeId { get; set; }
 		public string Timestamp { get; set; }
 		private string _browseName;
-
+		public List<Tag> Children 
+		{ 
+			get; 
+			set; 
+		} = new List<Tag>();
 		public string BrowseName
 		{
 			get { return _browseName; }

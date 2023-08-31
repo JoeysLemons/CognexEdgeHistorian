@@ -8,9 +8,12 @@ using Opc.Ua.Server;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Data;
+using System.Data.Entity.Infrastructure.Design;
 using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -19,6 +22,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Media3D;
 using System.Windows.Threading;
+using EdgePcConfigurationApp.Exceptions;
 using EdgePcConfigurationApp.Views;
 using EdgePcConfigurationApp.Views.Pages;
 using EdgePcConfigurationApp.Views.Windows;
@@ -51,8 +55,8 @@ namespace EdgePcConfigurationApp.ViewModels
                 UpdateTagBrowser();
             }
         }
-
-
+        
+        
         [ObservableProperty] private string selectedJob = "No Job Selected";
 
         [ObservableProperty] public bool isCameraSettingsOpen;
@@ -70,6 +74,19 @@ namespace EdgePcConfigurationApp.ViewModels
             }
         }
 
+        private List<Tag> UnsycnedTags = new List<Tag>();
+        private bool _showSaveTagsButton;
+
+        public bool ShowSaveTagsButton
+        {
+            get { return _showSaveTagsButton; }
+            set
+            {
+                _showSaveTagsButton = value;
+                OnPropertyChanged();
+            }
+        }
+        
         //! I think this could be obsolete but im too scared to remove it
         private static bool changesSaved { get; set; } = true;
 
@@ -144,7 +161,8 @@ namespace EdgePcConfigurationApp.ViewModels
             {
                 if (!camera.Connected && !camera.Connecting)
                     Task.Run(() => ConnectToCamera(camera));
-            }    
+            }
+            UpdateTagBrowser();
         }
 
         #region RelayCommands
@@ -156,12 +174,18 @@ namespace EdgePcConfigurationApp.ViewModels
             Trace.WriteLine($"Endpoint: {camera.Endpoint}");
             try
             {
-                bool connected = false;
-                App.Current.Dispatcher.Invoke(() =>
-                {
-                    camera.Connecting = true;
-                });
                 
+                //Check to see if this camera is already connected
+                bool hasDuplicates = CognexCameras
+                    .GroupBy(cgCam => cgCam.Endpoint)
+                    .Any(group => group.Count() > 1);
+                if (hasDuplicates)
+                    throw new DuplicateConnectionException(
+                        "The camera that you are trying to add is already connected to the system.");
+
+                bool connected = false;
+                App.Current.Dispatcher.Invoke(() => { camera.Connecting = true; });
+
                 ReferenceDescriptionCollection references;
                 var opcConfig = OPCUAUtils.CreateApplicationConfiguration(); //Create OPC UA App Config
                 await OPCUAUtils.InitializeApplication(); //Initialize OPC UA Client using app config
@@ -195,16 +219,18 @@ namespace EdgePcConfigurationApp.ViewModels
                         out references);
                     string pcGUID = AppConfigUtils.GetComputerGUID();
                     int pcID = DatabaseUtils.GetPCIdFromGUID(pcGUID);
+                    camera.MacAddress = NetworkUtils.GetMacAddress(camera.Endpoint);
                     int cameraId =
-                        DatabaseUtils.AddCamera(camera.Name, camera.Endpoint,
+                        DatabaseUtils.AddCamera(camera.Name, camera.Endpoint, camera.MacAddress,
                             pcID); //Adds the camera to the database if not already there. This is so that if the camera is connected to again config data can be loaded
                     camera.Session = session;
                     camera.CameraID = cameraId;
                     camera.References = references;
                     camera.HostName = session.SessionName;
+                    
                 }
 
-                
+
                 App.Current.Dispatcher.Invoke(() =>
                 {
                     camera.Connected = connected;
@@ -218,6 +244,16 @@ namespace EdgePcConfigurationApp.ViewModels
                 Trace.WriteLine(
                     $"An error was encountered while attempting to communicate with the database. \nError Message: {ex.Message}");
                 camera.Connecting = false;
+            }
+            catch (DuplicateConnectionException ex)
+            {
+                App.Current.Dispatcher.Invoke(() =>
+                {
+                    CognexCameras.Remove(camera);
+                });
+                ErrorMessage = ex.Message;
+                Trace.WriteLine(ex.Message);
+                return;
             }
             catch (Exception ex)
             {
@@ -261,6 +297,8 @@ namespace EdgePcConfigurationApp.ViewModels
         public void RefreshCameras()
         {
             Task.Run(Refresh);
+            UnsycnedTags.Clear();
+            ShowSaveTagsButton = false;
         }
 
         [RelayCommand]
@@ -270,18 +308,34 @@ namespace EdgePcConfigurationApp.ViewModels
             {
                 Tag selectedItem = parameter as Tag;
                 if (selectedItem == null)
-                {
                     throw new NullReferenceException();
-                }
-                selectedItem.Synced = false;
                 if (selectedItem.IsChecked)
-                {
                     SelectedCamera.SubscribedTags.Add(selectedItem);
+                else
+                    SelectedCamera.SubscribedTags.Remove(selectedItem); 
+                //Get Job ID
+                int jobID = DatabaseUtils.StoreJob(SelectedJob, SelectedCamera.CameraID);
+                List<string> tagConfiguration = DatabaseUtils.GetSavedTagConfiguration(jobID);
+                bool found = tagConfiguration.Contains(selectedItem.Name);
+                if (found && selectedItem.IsChecked)
+                {
+                    selectedItem.Synced = true;
+                    if (UnsycnedTags.Contains(selectedItem))
+                        UnsycnedTags.Remove(selectedItem);
+                }
+                else if (!found && !selectedItem.IsChecked)
+                {
+                    selectedItem.Synced = true;
+                    if (UnsycnedTags.Contains(selectedItem))
+                        UnsycnedTags.Remove(selectedItem);
                 }
                 else
                 {
-                    SelectedCamera.SubscribedTags.Remove(selectedItem);
+                    selectedItem.Synced = false;
+                    UnsycnedTags.Add(selectedItem);
                 }
+
+                ShowSaveTagsButton = UnsycnedTags.Count != 0;
             }
             catch (NullReferenceException ex)
             {
@@ -306,8 +360,8 @@ namespace EdgePcConfigurationApp.ViewModels
                 return;
             try
             {
-                DatabaseUtils.ResetTagMonitoredStatus(SelectedCamera.CameraID);
                 int jobID = DatabaseUtils.GetJobIdFromName(SelectedJob);
+                DatabaseUtils.ResetTagMonitoredStatus(jobID);
                 foreach (Tag tag in SelectedCamera.SubscribedTags)
                 {
                     tag.TagId = DatabaseUtils.AddTag(jobID, tag.Name, tag.NodeId);
@@ -332,7 +386,9 @@ namespace EdgePcConfigurationApp.ViewModels
 
             if (DatabaseUtils.CameraExists(SelectedCamera.Endpoint))
             {
-                List<string> tagsNames = DatabaseUtils.GetSavedTagConfiguration(SelectedCamera.Endpoint);
+                //Even though we are not storing a job into the database here this should return the id of the job as duplicate jobs are not allowed in the DB
+                int jobID = DatabaseUtils.StoreJob(SelectedJob, SelectedCamera.CameraID);
+                List<string> tagsNames = DatabaseUtils.GetSavedTagConfiguration(jobID);
                 if (tagsNames.Count != 0)
                 {
                     SetTagBrowserConfiguration(SelectedCamera.Tags, tagsNames);
@@ -354,8 +410,10 @@ namespace EdgePcConfigurationApp.ViewModels
         {
             CognexCamera camera = parameter as CognexCamera;
             CameraModifyWindow cameraSettingsWindow = new CameraModifyWindow();
-            cameraSettingsWindow.DataContext = new CameraModifyViewModel(cameraSettingsWindow, this, camera);
+            CameraModifyViewModel viewModel = new CameraModifyViewModel(cameraSettingsWindow, this, camera);
+            cameraSettingsWindow.DataContext = viewModel;
             cameraSettingsWindow.ShowDialog();
+            camera = viewModel.Camera;
         }
         [RelayCommand]
         public void Debug()
@@ -547,6 +605,7 @@ namespace EdgePcConfigurationApp.ViewModels
             foreach(CognexCamera camera in deviceList)
             {
                 camera.Tags?.Clear();
+                camera.Session?.Close();
                 camera.Session?.Dispose();
             }
         }
@@ -594,26 +653,35 @@ namespace EdgePcConfigurationApp.ViewModels
                     SelectedCamera.Tags = await BrowseChildren(SelectedCamera.Session, SelectedCamera.References);
                     if (selectedCamera.Tags == null)
                         return;
+                    
+                    //Gets all tags inside the spreadsheet directory in the OPC UA server
+                    bool insightExplorer = CheckInsightExplorer(selectedCamera.Tags);
+                    SearchTag(SelectedCamera.Tags, insightExplorer ? "JobTags" : "Spreadsheet");
+                    DefaultTagError = CheckDefaultTagError();
+                    //Reads the loaded job from the OPC UA server and sets that as the currently selected job
+                    SelectedJob = GetJobName(selectedCamera.Tags);
+                    int jobID = DatabaseUtils.StoreJob(SelectedJob, SelectedCamera.CameraID);
+                    //adds the job to the list of jobs in the camera Dont know if we really need this here but here it is anyways
+                    SelectedCamera.jobs.Add(SelectedJob);
+                    
                     //Check to see if camera exists in database
                     if (DatabaseUtils.CameraExists(SelectedCamera.Endpoint))
                     {
                         //Get a list of all the tags that are currently saved in the database
-                        List<string> tagsNames = DatabaseUtils.GetSavedTagConfiguration(SelectedCamera.Endpoint);
+                        List<string> tagsNames = DatabaseUtils.GetSavedTagConfiguration(jobID);
                         if(tagsNames.Count != 0)
                         {
                             SetTagBrowserConfiguration(SelectedCamera.Tags, tagsNames);
                         }
+                        else
+                        {
+                            List<string> tagNames = Tags.Select(tag => tag.Name).ToList();
+                            SetTagBrowserConfiguration(SelectedCamera.Tags, tagNames);
+                        }
                     }
-                    //Gets all tags inside the spreadsheet directory in the OPC UA server
-                    bool insightExplorer = CheckInsightExplorer(selectedCamera.Tags);
-                    SearchTag(SelectedCamera.Tags, insightExplorer ? "JobTags" : "Spreadsheet");
+                    
 
-                    DefaultTagError = CheckDefaultTagError();
-                    //Reads the loaded job from the OPC UA server and sets that as the currently selected job
-                    SelectedJob = GetJobName(selectedCamera.Tags);
-                    DatabaseUtils.StoreJob(SelectedJob, SelectedCamera.CameraID);
-                    //adds the job to the list of jobs in the camera Dont know if we really need this here but here it is anyways
-                    SelectedCamera.jobs.Add(SelectedJob);
+                    
                 }
                 else
                     Tags.Clear();

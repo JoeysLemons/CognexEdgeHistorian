@@ -1,12 +1,14 @@
-﻿using System.Threading.Tasks;
+﻿using System.Threading;
+using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using EdgePcConfigurationApp.Helpers;
 using EdgePcConfigurationApp.Models;
 using Microsoft.AspNetCore.Mvc.ApplicationParts;
+using Wpf.Ui.Common;
 using Wpf.Ui.Common.Interfaces;
 using Wpf.Ui.Controls;
-using MessageBox = System.Windows.MessageBox;
+using MessageBox = Wpf.Ui.Controls.MessageBox;
 
 namespace EdgePcConfigurationApp.ViewModels;
 
@@ -98,6 +100,12 @@ public partial class CameraModifyViewModel : ObservableObject, INavigationAware
     {
         if (Camera is not null)
         {
+            if (ipAddress != Camera.Endpoint && Camera.Connected)
+            {
+                Camera.Session.Close();
+                Camera.Session.Dispose();
+                Camera.Connected = false;
+            }
             Camera.Endpoint = ipAddress;
             Camera.Name = name;
             Task.Run(() => _dashboardViewModel.ConnectToCamera(Camera));
@@ -113,10 +121,20 @@ public partial class CameraModifyViewModel : ObservableObject, INavigationAware
     [RelayCommand]
     public void DeleteCamera()
     {
-        //Add functionality to delete camera from list of cameras. 
-        //Should also add some warning saying this is irreversable
+        int id = DatabaseUtils.GetCameraIdByEndpoint(Camera.Endpoint);
+        bool success = DatabaseUtils.DeleteCamera(id);
+        if (!success)
+        {
+            MessageBox messageBox = new MessageBox();
+            messageBox.ShowFooter = false;
+            messageBox.Height = 75;
+            messageBox.Show("Deletion Error", "Camera contains records and cannot be deleted.");
+            return;
+        }
+
+        DashboardViewModel.CognexCameras.Remove(Camera);
+        PopupWindow.Close();
     }
-    
     public void OnNavigatedTo()
     {
     }

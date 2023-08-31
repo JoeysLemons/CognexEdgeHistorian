@@ -9,6 +9,7 @@ using System.Linq;
 using System.Net;
 using System.Reflection.Metadata;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.Input;
 
@@ -17,11 +18,46 @@ namespace EdgePcConfigurationApp.Models
     public class CognexCamera : ObservableObject
     {
         public Session Session { get; set; }
-        public string Endpoint { get; set; } = string.Empty;
+
+        public string Endpoint
+        {
+            get => _endpoint;
+            set
+            {
+                //Check to make sure the endpoint is not being changed to an existing endpoint
+                CameraID = DatabaseUtils.GetCameraIdByEndpoint(Endpoint);
+                bool canUpdate = DatabaseUtils.UpdateCameraEndpoint(value, CameraID);
+                if(!canUpdate)
+                    return;
+                
+                if (value == _endpoint) return;
+                _endpoint = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public string MacAddress { get; set; }
+
         public string SessionName { get; set; } = string.Empty;
         public string HostName { get; set; } = string.Empty;
-        public string Name { get; set; }
-        public int CameraID { get; set; }
+
+        public string Name
+        {
+            get => _name;
+            set
+            {
+                if (value == _name) return;
+                _name = value;
+                OnPropertyChanged();
+            }
+        }
+        
+        private int _cameraId;
+        public int CameraID
+        {
+            get => _cameraId;
+            set => _cameraId = value;
+        }
 
         private bool _connected = false;
         public bool Connected
@@ -59,7 +95,7 @@ namespace EdgePcConfigurationApp.Models
                 OnPropertyChanged();
             }
         }
-
+        
         public string Region { get; set; }
         public string Location { get; set; }
         public string ProductionLine { get; set; }
@@ -77,6 +113,8 @@ namespace EdgePcConfigurationApp.Models
             }
         }
         private ObservableCollection<Tag> _subscribedTags = new ObservableCollection<Tag>();
+        private string _endpoint = string.Empty;
+        private string _name;
 
 
         public ObservableCollection<Tag> SubscribedTags

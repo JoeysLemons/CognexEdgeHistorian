@@ -29,13 +29,17 @@
             <ColumnDefinition />
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
-            <RowDefinition Height="75" />
-            <RowDefinition Height="30"/>
+            <RowDefinition Height="0" />
+            <RowDefinition Height="50"/>
             <RowDefinition/>
             <RowDefinition Height="auto"/>
         </Grid.RowDefinitions>
         
-        <StackPanel Grid.ColumnSpan="2" Orientation="Horizontal">
+        <StackPanel Grid.Row="1" Orientation="Horizontal">
+            <TextBlock Text="Device Connection Pane"
+                       FontSize="14"
+                       VerticalAlignment="Center"
+                       Margin="15 0"/>
             <ui:Button
                 Margin="10 0 5 0"
                 Command="{Binding ViewModel.OpenAddCameraDialogCommand}"
@@ -43,30 +47,11 @@
                 Icon="Add20"/>
             <ui:Button
                 Margin="5"
-                Command="{Binding ViewModel.DisconnectFromCameraCommand}"
-                CommandParameter="{Binding ElementName=DeviceConnectionPane, Path=SelectedItem}"
-                Content="Disconnect"
-                Icon="PlugDisconnected20"/>
-            <ui:Button
-                Margin="5"
                 Command="{Binding ViewModel.RefreshCamerasCommand}"
                 Content="Refresh"
                 Icon="ArrowSync20"/>
-            <ui:Button
-                Margin="5"
-                Command="{Binding ViewModel.ResetTagBrowserCommand}"
-                Content="Reset" 
-                Icon="ArrowReset20"/>
-            <ui:Button
-                Margin="5"
-                Command="{Binding ViewModel.ApplyChangesCommand}"
-                Content="Apply Configuration" 
-                Icon="Checkmark20"/>
-            <ui:Button Command="{Binding ViewModel.DebugCommand}" Content="Debug" />
         </StackPanel>
-        <TextBlock Text="Device Connection Pane" Grid.Row="1" 
-                   FontSize="14"
-                   Margin="15 0"/>
+        
         <Border 
             Background="#393939"
             CornerRadius="5"
@@ -77,7 +62,7 @@
             Margin="10"
             VerticalAlignment="Stretch"
             ItemsSource="{Binding ViewModel.CognexCameras}"
-            SelectedItem="{Binding ViewModel.SelectedCamera}"
+            SelectedItem="{Binding ViewModel.SelectedCamera, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
             SelectionMode="Single">
             <ListView.ItemTemplate>
                 <DataTemplate>
@@ -127,10 +112,26 @@
         <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal">
             <TextBlock Text="Loaded Job:"
                        FontSize="14"
+                       VerticalAlignment="Center"
                        Margin="15 0 0 0"/>
-            <TextBlock Text="{Binding ViewModel.JobName, UpdateSourceTrigger=PropertyChanged}"
+            <TextBlock Text="{Binding ViewModel.SelectedJob, UpdateSourceTrigger=PropertyChanged}"
                        FontSize="14"
+                       VerticalAlignment="Center"
                        Margin="5 0"/>
+            <ui:Button
+                Margin="5"
+                Command="{Binding ViewModel.ResetTagBrowserCommand}"
+                Content="Reset" 
+                HorizontalAlignment="Right"
+                Visibility="{Binding ViewModel.ShowSaveTagsButton, Converter={StaticResource BooleanToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged}"
+                Icon="ArrowReset20"/>
+            <ui:Button
+                Margin="5"
+                Command="{Binding ViewModel.ApplyChangesCommand}"
+                Content="Save" 
+                HorizontalAlignment="Right"
+                Visibility="{Binding ViewModel.ShowSaveTagsButton, Converter={StaticResource BooleanToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged}"
+                Icon="Save20"/>
         </StackPanel>
         
         <Border

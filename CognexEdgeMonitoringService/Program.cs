@@ -14,17 +14,13 @@ namespace CognexEdgeMonitoringService
         /// </summary>
         static void Main()
         {
-#if DEBUG
-            CognexMonitoringService cognexEdgeMonitoringService = new CognexMonitoringService();
-            cognexEdgeMonitoringService.OnDebug();
-#else
-ServiceBase[] ServicesToRun;
+            ServiceBase[] ServicesToRun;
             ServicesToRun = new ServiceBase[]
             {
                 new CognexMonitoringService()
             };
             ServiceBase.Run(ServicesToRun);
-#endif
+
 
         }
     }

@@ -278,6 +278,7 @@
       <DependentUpon>CognexMonitoringService.cs</DependentUpon>
     </Compile>
     <Compile Include="Core\DatabaseUtils.cs" />
+    <Compile Include="Core\DatabaseUtilsOLD.cs" />
     <Compile Include="Core\FolderMonitor.cs" />
     <Compile Include="Core\OPCUAUtils.cs" />
     <Compile Include="Core\TelnetUtils.cs" />
@@ -290,6 +291,11 @@
     <None Include="App.config" />
     <None Include="ServiceConfig.config" />
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="..\EdgePcConfigurationApp\AppSettings.xml">
+      <Link>AppSettings.xml</Link>
+    </Content>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">

@@ -58,7 +58,7 @@ namespace CognexEdgeMonitoringService.Core
             return config;
         }
 
-        public static ApplicationConfiguration CreateApplicationConfiguration()
+        private static ApplicationConfiguration CreateApplicationConfiguration()
         {
             var applicationName = "CognexEdgeHistorianOpcUaClient";
             var applicationUri = Utils.Format(@"urn:{0}:CognexEdgeHistorianOpcUaClient", System.Net.Dns.GetHostName());
@@ -275,7 +275,7 @@ namespace CognexEdgeMonitoringService.Core
                     {
                         Trace.WriteLine(response.Results[0].Value.ToString());
                         Trace.WriteLine($"OPC Trigger Server Time: {response.Results[0].ServerTimestamp.ToString("yyyy-MM-dd HH:mm:ss.fff")}");
-                        DatabaseUtils.StoreTagValue(tag.ID, response.Results[0].Value.ToString(), response.Results[0].SourceTimestamp.ToString());
+                        DatabaseUtilsOLD.StoreTagValue(tag.ID, response.Results[0].Value.ToString(), response.Results[0].SourceTimestamp.ToString());
                     }
                     catch (SqlException ex)
                     {
@@ -342,7 +342,7 @@ namespace CognexEdgeMonitoringService.Core
 
             try
             {
-                DatabaseUtils.StoreTagValue(ConvertNodeIdToInteger(monitoredItem.DisplayName), value.Value.ToString(), value.SourceTimestamp.ToString());
+                DatabaseUtilsOLD.StoreTagValue(ConvertNodeIdToInteger(monitoredItem.DisplayName), value.Value.ToString(), value.SourceTimestamp.ToString());
             }
             catch (SqlException ex)
             {

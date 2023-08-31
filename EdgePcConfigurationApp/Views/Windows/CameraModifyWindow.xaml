@@ -40,7 +40,7 @@
                     VerticalAlignment="Bottom"/>
                 <ui:Button 
                     Content="Delete"
-                    Command="{Binding DeleteCommand}"
+                    Command="{Binding DeleteCameraCommand}"
                     Margin="5 15"
                     Width="100"
                     Icon="Delete20"
