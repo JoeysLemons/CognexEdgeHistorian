@@ -52,7 +52,10 @@ namespace EdgePcConfigurationApp.ViewModels
             set
             {
                 selectedCamera = value;
-                UpdateTagBrowser();
+                Tags.Clear();
+                DisplayTags.Clear();
+                Task.Run(() => CheckCameraOnline(selectedCamera));
+                Task.Run(UpdateTagBrowser);
             }
         }
         
@@ -60,6 +63,26 @@ namespace EdgePcConfigurationApp.ViewModels
         [ObservableProperty] private string selectedJob = "No Job Selected";
 
         [ObservableProperty] public bool isCameraSettingsOpen;
+
+        private void UpdateDisplayTags()
+        {
+            ObservableCollection<Tag> temp  = new ObservableCollection<Tag>(Tags);
+            var acqCountTag = temp.FirstOrDefault(tag => tag.Name == "AcquisitionCount");
+            var imgFileNameTag = temp.FirstOrDefault(tag => tag.Name == "ImageFileName");
+            temp.Remove(acqCountTag);
+            temp.Remove(imgFileNameTag);
+            DisplayTags = temp;
+        }
+        private ObservableCollection<Tag> displayTags = new ObservableCollection<Tag>();
+        public ObservableCollection<Tag> DisplayTags
+        {
+            get { return displayTags; }
+            private set
+            {
+                displayTags = value;
+                OnPropertyChanged(); // Notify that the DisplayTags property has changed
+            }
+        }
 
         //Holds the collection of tags that should be currently displayed in the tag browser
         private ObservableCollection<Tag> _tags = new ObservableCollection<Tag>();
@@ -71,6 +94,7 @@ namespace EdgePcConfigurationApp.ViewModels
             {
                 _tags = value;
                 OnPropertyChanged(nameof(Tags));
+                UpdateDisplayTags();
             }
         }
 
@@ -144,6 +168,26 @@ namespace EdgePcConfigurationApp.ViewModels
             }
         }
 
+        public async Task CheckCameraOnline(CognexCamera camera)
+        {
+            App.Current.Dispatcher.Invoke(() => { camera.Connecting = true; });
+            bool success = NetworkUtils.PingHost(camera.Endpoint);
+            if (success && camera.Disconnected)
+            {
+                await Task.Run(() => ConnectToCamera(camera));
+                if (camera.Connected)
+                    Task.Run(UpdateTagBrowser);
+                return;
+            }
+
+            App.Current.Dispatcher.Invoke(() =>
+            {
+                camera.Connected = success;
+                camera.Connecting = false;
+            });
+            
+        }
+
         //Leaving these here to implement the INavigationAware Interface. May possibly use these in the future 
         public void OnNavigatedTo()
         {
@@ -161,6 +205,8 @@ namespace EdgePcConfigurationApp.ViewModels
             {
                 if (!camera.Connected && !camera.Connecting)
                     Task.Run(() => ConnectToCamera(camera));
+                else if (camera.Connected && !camera.Connecting)
+                    Task.Run(() => CheckCameraOnline(camera));
             }
             UpdateTagBrowser();
         }
@@ -398,6 +444,8 @@ namespace EdgePcConfigurationApp.ViewModels
             bool insightExplorer = CheckInsightExplorer(selectedCamera.Tags);
             SearchTag(SelectedCamera.Tags, insightExplorer ? "Jobtags" : "Spreadsheet");
             ResetSyncIcons(Tags);
+            UnsycnedTags.Clear();
+            ShowSaveTagsButton = false;
         }
 
         [RelayCommand]
@@ -609,7 +657,12 @@ namespace EdgePcConfigurationApp.ViewModels
                 camera.Session?.Dispose();
             }
         }
-
+        
+        /// <summary>
+        /// This method checks to see if the default tags required for the monitoring system to work are present in the
+        /// currently loaded job file.
+        /// </summary>
+        /// <returns>false if no issues were found. True if there were issues</returns>
         public bool CheckDefaultTagError()
         {
             bool found = false;
@@ -644,7 +697,7 @@ namespace EdgePcConfigurationApp.ViewModels
 
         }
         
-        public async void UpdateTagBrowser()
+        public async Task UpdateTagBrowser()
         {
             try
             {
@@ -653,39 +706,37 @@ namespace EdgePcConfigurationApp.ViewModels
                     SelectedCamera.Tags = await BrowseChildren(SelectedCamera.Session, SelectedCamera.References);
                     if (selectedCamera.Tags == null)
                         return;
-                    
+
                     //Gets all tags inside the spreadsheet directory in the OPC UA server
                     bool insightExplorer = CheckInsightExplorer(selectedCamera.Tags);
                     SearchTag(SelectedCamera.Tags, insightExplorer ? "JobTags" : "Spreadsheet");
-                    DefaultTagError = CheckDefaultTagError();
+                    SelectedCamera.DefaultTagError = CheckDefaultTagError();
                     //Reads the loaded job from the OPC UA server and sets that as the currently selected job
                     SelectedJob = GetJobName(selectedCamera.Tags);
                     int jobID = DatabaseUtils.StoreJob(SelectedJob, SelectedCamera.CameraID);
                     //adds the job to the list of jobs in the camera Dont know if we really need this here but here it is anyways
                     SelectedCamera.jobs.Add(SelectedJob);
-                    
+
                     //Check to see if camera exists in database
                     if (DatabaseUtils.CameraExists(SelectedCamera.Endpoint))
                     {
                         //Get a list of all the tags that are currently saved in the database
                         List<string> tagsNames = DatabaseUtils.GetSavedTagConfiguration(jobID);
-                        if(tagsNames.Count != 0)
+                        if (tagsNames.Count != 0)
                         {
                             SetTagBrowserConfiguration(SelectedCamera.Tags, tagsNames);
                         }
                         else
                         {
-                            List<string> tagNames = Tags.Select(tag => tag.Name).ToList();
+                            List<string> tagNames = DisplayTags.Select(tag => tag.Name).ToList();
                             SetTagBrowserConfiguration(SelectedCamera.Tags, tagNames);
+                            ApplyChanges();
                         }
                     }
-                    
-
-                    
                 }
                 else
-                    Tags.Clear();
-                    
+                    App.Current.Dispatcher.Invoke(() => { Tags.Clear(); });
+
             }
             catch(NullReferenceException)
             {

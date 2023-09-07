@@ -36,7 +36,16 @@ namespace EdgePcConfigurationApp.Models
             }
         }
 
-        public string MacAddress { get; set; }
+        public string MacAddress
+        {
+            get => _macAddress;
+            set
+            {
+                if (value == _macAddress) return;
+                _macAddress = value;
+                OnPropertyChanged();
+            }
+        }
 
         public string SessionName { get; set; } = string.Empty;
         public string HostName { get; set; } = string.Empty;
@@ -96,6 +105,18 @@ namespace EdgePcConfigurationApp.Models
             }
         }
         
+        private bool _defaultTagError = false;
+        public bool DefaultTagError
+        {
+            get => _defaultTagError;
+            set
+            {
+                if (value == _defaultTagError) return;
+                _defaultTagError = value;
+                OnPropertyChanged();
+            }
+        }
+
         public string Region { get; set; }
         public string Location { get; set; }
         public string ProductionLine { get; set; }
@@ -115,6 +136,7 @@ namespace EdgePcConfigurationApp.Models
         private ObservableCollection<Tag> _subscribedTags = new ObservableCollection<Tag>();
         private string _endpoint = string.Empty;
         private string _name;
+        private string _macAddress;
 
 
         public ObservableCollection<Tag> SubscribedTags

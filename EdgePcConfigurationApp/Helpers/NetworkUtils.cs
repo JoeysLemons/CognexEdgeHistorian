@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Net.NetworkInformation;
+using Org.BouncyCastle.Utilities.Net;
+using IPAddress = System.Net.IPAddress;
 
 namespace EdgePcConfigurationApp.Helpers;
 
@@ -11,25 +13,58 @@ public class NetworkUtils
     /// </summary>
     /// <param name="endpoint">IP address of the device you want to get the MAC address of</param>
     /// <returns>The MAC address of the provided IP address. Returns an empty string if no device with a matching IP address is found</returns>
-    public static string GetMacAddress(string endpoint)
+
+    public static string GetMacAddress(string ipAddress)
     {
-        NetworkInterface[] networkInterfaces = NetworkInterface.GetAllNetworkInterfaces();
-        foreach (var networkInterface in networkInterfaces)
+        try
         {
-            var ipProperties = networkInterface.GetIPProperties();
-            foreach (var ipAddress in ipProperties.UnicastAddresses)
+            var arp = new ProcessStartInfo
             {
-                if (ipAddress.Address.ToString() == endpoint)
+                FileName = "arp",
+                Arguments = $"-a {ipAddress}",
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+
+            using (var process = new Process { StartInfo = arp })
+            {
+                process.Start();
+                string output = process.StandardOutput.ReadToEnd();
+                string[] lines = output.Split('\n');
+                if (lines.Length >= 4)
                 {
-                    // This network interface matches the server's IP address.
-                    // You can retrieve the MAC address from this interface.
-                    PhysicalAddress macAddress = networkInterface.GetPhysicalAddress();
-                    string macAddressString = BitConverter.ToString(macAddress.GetAddressBytes());
-                    Trace.WriteLine($"MAC Address: {macAddressString}");
-                    return macAddressString;
+                    string[] parts = lines[3].Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                    if (parts.Length >= 3)
+                    {
+                        return parts[1];
+                    }
                 }
             }
         }
-        return String.Empty;
+        catch (Exception ex)
+        {
+            Console.WriteLine($"An error occurred: {ex.Message}");
+        }
+
+        return null;
     }
+
+    public static bool PingHost(string ipAddress)
+    {
+        using (Ping ping = new Ping())
+        {
+            try
+            {
+                PingReply reply = ping.Send(ipAddress);
+                return reply.Status == IPStatus.Success;
+            }
+            catch (PingException e)
+            {
+                Trace.WriteLine(e);
+                return false;
+            }
+        }
+    }
+
 }

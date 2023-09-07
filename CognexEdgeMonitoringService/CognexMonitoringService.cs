@@ -50,7 +50,6 @@ namespace CognexEdgeMonitoringService
             {
                 List<string> cameraAddresses = GetCameras();
                 SpawnCameraMonitors(cameraAddresses);
-
             }
             catch (Exception e)
             {

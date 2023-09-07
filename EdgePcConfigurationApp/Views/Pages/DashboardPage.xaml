@@ -69,34 +69,45 @@
                     <Grid Margin="5">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="40"/>
-                            <ColumnDefinition Width="40"/>
-                            <ColumnDefinition Width="40"/>
+                            <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="40"/>
                         </Grid.ColumnDefinitions>
                         <StackPanel>
-                            <TextBlock x:Name="SessionName" Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                            <TextBlock x:Name="SessionEndpoint" Text="{Binding Endpoint, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBlock 
+                                Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                FontSize="14"
+                                FontWeight="Bold"/>
+                            <TextBlock Margin="5 0">
+                                <Run Text="IP Address: "/>
+                                <Run Text="{Binding Endpoint, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                            </TextBlock>
+                            <TextBlock Margin="5 0">
+                                <Run Text="MAC Address: "/>
+                                <Run Text="{Binding MacAddress, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                            </TextBlock>
                         </StackPanel>
-                        <ui:SymbolIcon Grid.Column="1" 
-                                       Symbol="Warning20" 
-                                       Foreground="OrangeRed" 
-                                       ToolTip="One or more of the required tags is missing from the job file currently loaded. Please refer to the cognex setup documentation and add the missing tags."
-                                       Visibility="{Binding DataContext.ViewModel.DefaultTagError, RelativeSource={RelativeSource AncestorType={x:Type ListBox}} ,Converter={StaticResource BooleanToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged}"/>
-                        <ui:ProgressRing Grid.Column="2" 
-                                         IsIndeterminate="True" 
-                                         Height="20" Width="20"
-                                         Visibility="{Binding Connecting, Converter={StaticResource BooleanToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged}"/>
-                        <ui:SymbolIcon Grid.Column="3"
-                                       Symbol="PlugDisconnected20"
-                                       Foreground="OrangeRed"
-                                       ToolTip="Camera is disconnected."
-                                       Visibility="{Binding Disconnected, Converter={StaticResource BooleanToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged}"/>
-                        <ui:SymbolIcon Grid.Column="3"
-                                       Symbol="PlugConnectedCheckmark20"
-                                       Foreground="Lime"
-                                       ToolTip="Camera is connected."
-                                       Visibility="{Binding Connected, Converter={StaticResource BooleanToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged}"/>
+                        <StackPanel Orientation="Horizontal" Grid.Column="1" HorizontalAlignment="Right" Margin="10 0">
+                            <ui:SymbolIcon Symbol="Warning20" 
+                                           Margin="2 0"
+                                           Foreground="OrangeRed" 
+                                           ToolTip="One or more of the required tags is missing from the job file currently loaded. Please refer to the cognex setup documentation and add the missing tags."
+                                           Visibility="{Binding DefaultTagError, Converter={StaticResource BooleanToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged}"/>
+                            <ui:ProgressRing IsIndeterminate="True" 
+                                             Margin="2 0"
+                                             Height="20" Width="20"
+                                             Visibility="{Binding Connecting, Converter={StaticResource BooleanToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged}"/>
+                            <ui:SymbolIcon Symbol="PlugDisconnected20"
+                                           Margin="2 0"
+                                           Foreground="OrangeRed"
+                                           ToolTip="Camera is disconnected."
+                                           Visibility="{Binding Disconnected, Converter={StaticResource BooleanToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged}"/>
+                            <ui:SymbolIcon Symbol="PlugConnectedCheckmark20"
+                                           Margin="2 0"
+                                           Foreground="Lime"
+                                           ToolTip="Camera is connected."
+                                           Visibility="{Binding Connected, Converter={StaticResource BooleanToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged}"/>
+                        </StackPanel>
+                        
                         
                         <Button Grid.Column="4"
                                 Command="{Binding DataContext.ViewModel.SetCameraSettingsCommand, RelativeSource={RelativeSource AncestorType={x:Type ListBox}}}"
@@ -144,7 +155,7 @@
             <ScrollViewer Focusable="True" PreviewMouseWheel="ListViewScrollViewer_PreviewMouseWheel">
                 <TreeView
                     x:Name="TagBrowser"
-                    ItemsSource="{Binding ViewModel.Tags}"
+                    ItemsSource="{Binding ViewModel.DisplayTags}"
                     ScrollViewer.CanContentScroll="True">
                     <TreeView.ItemTemplate>
                         <HierarchicalDataTemplate DataType="{x:Type models:Tag}" ItemsSource="{Binding Children}">
