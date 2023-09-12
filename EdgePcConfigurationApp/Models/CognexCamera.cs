@@ -57,6 +57,11 @@ namespace EdgePcConfigurationApp.Models
             {
                 if (value == _name) return;
                 _name = value;
+                if (MacAddress != null)
+                {
+                    CameraID = DatabaseUtils.GetCameraIdByMacAddress(MacAddress);
+                    DatabaseUtils.UpdateCameraName(value, CameraID);
+                }
                 OnPropertyChanged();
             }
         }

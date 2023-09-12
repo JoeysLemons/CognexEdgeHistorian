@@ -105,10 +105,10 @@ public partial class CameraModifyViewModel : ObservableObject, INavigationAware
                 Camera.Session.Close();
                 Camera.Session.Dispose();
                 Camera.Connected = false;
+                Camera.Endpoint = ipAddress;
+                Task.Run(() => _dashboardViewModel.ConnectToCamera(Camera));
             }
-            Camera.Endpoint = ipAddress;
             Camera.Name = name;
-            Task.Run(() => _dashboardViewModel.ConnectToCamera(Camera));
         }
         else
         {

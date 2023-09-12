@@ -266,9 +266,8 @@ namespace EdgePcConfigurationApp.ViewModels
                     string pcGUID = AppConfigUtils.GetComputerGUID();
                     int pcID = DatabaseUtils.GetPCIdFromGUID(pcGUID);
                     camera.MacAddress = NetworkUtils.GetMacAddress(camera.Endpoint);
-                    int cameraId =
-                        DatabaseUtils.AddCamera(camera.Name, camera.Endpoint, camera.MacAddress,
-                            pcID); //Adds the camera to the database if not already there. This is so that if the camera is connected to again config data can be loaded
+                    //Adds the camera to the database if not already there. This is so that if the camera is connected to again config data can be loaded
+                    int cameraId = DatabaseUtils.AddCamera(camera.Name, camera.Endpoint, camera.MacAddress, pcID);
                     camera.Session = session;
                     camera.CameraID = cameraId;
                     camera.References = references;
@@ -490,11 +489,11 @@ namespace EdgePcConfigurationApp.ViewModels
         }
 
         /// <summary>
-        /// This method will recursively browse all available tags on the OPC UA server.
+        /// Browses the children of a given session and reference collection.
         /// </summary>
-        /// <param name="session">The active OPC UA Session you would like to browse</param>
-        /// <param name="references"></param>
-        /// <returns>Returns an ObservableCollection of the Tag object</returns>
+        /// <param name="session">The OPC UA session.</param>
+        /// <param name="references">The reference descriptions to browse.</param>
+        /// <returns>An ObservableCollection of Tag objects representing the children.</returns>
         public async Task<ObservableCollection<Tag>> BrowseChildren(Session session, ReferenceDescriptionCollection references)
         {
             try
@@ -613,10 +612,9 @@ namespace EdgePcConfigurationApp.ViewModels
         /// </summary>
         /// <param name="tags">A list of all the tags in a cameras OPC server</param>
         /// <returns>A string containing the currently loaded job name</returns>
-        private string GetJobName(ObservableCollection<Tag> tags)
+        private string GetJobName(ObservableCollection<Tag> tags, string searchParam)
         {
             List<Tag> results = new List<Tag>();
-            string searchParam = "System";
             string result = "Job Not Found";
             //search for the JobName tag
             foreach (Tag tag in tags)
@@ -629,7 +627,7 @@ namespace EdgePcConfigurationApp.ViewModels
                 else if(tag.Children.Count > 0)
                 {
                     ObservableCollection<Tag> children = new ObservableCollection<Tag>(tag.Children);
-                    result = GetJobName(children);
+                    result = GetJobName(children, searchParam);
                     if (result != "Job Not Found") return result;
                 }
             }
@@ -696,47 +694,55 @@ namespace EdgePcConfigurationApp.ViewModels
             return false;
 
         }
-        
+        private bool CheckCameraStatus()
+        {
+            if (SelectedCamera != null && SelectedCamera.Connected)
+            {
+                return true;
+            }
+            else
+            {
+                App.Current.Dispatcher.Invoke(() => { Tags.Clear(); });
+                return false;
+            }
+        }
         public async Task UpdateTagBrowser()
         {
             try
             {
-                if (SelectedCamera != null && SelectedCamera.Connected)
+                //Makes sure that the selected camera is not null and is connected
+                if (!CheckCameraStatus()) return;
+                //browse all the tags on the camera
+                SelectedCamera.Tags = await BrowseChildren(SelectedCamera.Session, SelectedCamera.References);
+                //if tags are null something is wrong and the method should return. Possible that the camera OPC is not enabled
+                if (selectedCamera.Tags == null) return;
+
+                //Gets all tags inside the spreadsheet directory in the OPC UA server
+                bool insightExplorer = CheckInsightExplorer(selectedCamera.Tags);
+                SearchTag(SelectedCamera.Tags, insightExplorer ? "JobTags" : "Spreadsheet");
+                SelectedCamera.DefaultTagError = CheckDefaultTagError();
+                //Reads the loaded job from the OPC UA server and sets that as the currently selected job
+                SelectedJob = GetJobName(selectedCamera.Tags, insightExplorer ? "SystemTags" : "System");
+                int jobID = DatabaseUtils.StoreJob(SelectedJob, SelectedCamera.CameraID);
+                //adds the job to the list of jobs in the camera Dont know if we really need this here but here it is anyways
+                SelectedCamera.jobs.Add(SelectedJob);
+
+                //Check to see if camera exists in database
+                if (DatabaseUtils.CameraExists(SelectedCamera.Endpoint))
                 {
-                    SelectedCamera.Tags = await BrowseChildren(SelectedCamera.Session, SelectedCamera.References);
-                    if (selectedCamera.Tags == null)
-                        return;
-
-                    //Gets all tags inside the spreadsheet directory in the OPC UA server
-                    bool insightExplorer = CheckInsightExplorer(selectedCamera.Tags);
-                    SearchTag(SelectedCamera.Tags, insightExplorer ? "JobTags" : "Spreadsheet");
-                    SelectedCamera.DefaultTagError = CheckDefaultTagError();
-                    //Reads the loaded job from the OPC UA server and sets that as the currently selected job
-                    SelectedJob = GetJobName(selectedCamera.Tags);
-                    int jobID = DatabaseUtils.StoreJob(SelectedJob, SelectedCamera.CameraID);
-                    //adds the job to the list of jobs in the camera Dont know if we really need this here but here it is anyways
-                    SelectedCamera.jobs.Add(SelectedJob);
-
-                    //Check to see if camera exists in database
-                    if (DatabaseUtils.CameraExists(SelectedCamera.Endpoint))
+                    //Get a list of all the tags that are currently saved in the database
+                    List<string> tagsNames = DatabaseUtils.GetSavedTagConfiguration(jobID);
+                    if (tagsNames.Count != 0)
                     {
-                        //Get a list of all the tags that are currently saved in the database
-                        List<string> tagsNames = DatabaseUtils.GetSavedTagConfiguration(jobID);
-                        if (tagsNames.Count != 0)
-                        {
-                            SetTagBrowserConfiguration(SelectedCamera.Tags, tagsNames);
-                        }
-                        else
-                        {
-                            List<string> tagNames = DisplayTags.Select(tag => tag.Name).ToList();
-                            SetTagBrowserConfiguration(SelectedCamera.Tags, tagNames);
-                            ApplyChanges();
-                        }
+                        SetTagBrowserConfiguration(SelectedCamera.Tags, tagsNames);
+                    }
+                    else
+                    {
+                        List<string> tagNames = DisplayTags.Select(tag => tag.Name).ToList();
+                        SetTagBrowserConfiguration(SelectedCamera.Tags, tagNames);
+                        ApplyChanges();
                     }
                 }
-                else
-                    App.Current.Dispatcher.Invoke(() => { Tags.Clear(); });
-
             }
             catch(NullReferenceException)
             {

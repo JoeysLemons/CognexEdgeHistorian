@@ -8,6 +8,7 @@ using System.Diagnostics;
 using System.Windows.Documents;
 using System.Xml;
 using EdgePcConfigurationApp.Models;
+using Opc.Ua;
 
 namespace EdgePcConfigurationApp.Helpers
 {
@@ -100,6 +101,21 @@ namespace EdgePcConfigurationApp.Helpers
             }
         }
 
+        public static void UpdateCameraName(string cameraName, int cameraID)
+        {
+            using (SqlConnection sqlConnection = new SqlConnection(ConnectionString))
+            {
+                sqlConnection.Open();
+                string updateNameQuery = @"Update Cameras SET Name = @name WHERE id = @id";
+                using (SqlCommand command = new SqlCommand(updateNameQuery, sqlConnection))
+                {
+                    command.Parameters.AddWithValue("@name", cameraName);
+                    command.Parameters.AddWithValue("@id", cameraID);
+                    command.ExecuteNonQuery();
+                }
+            }
+        }
+        
         public static int AddCamera(string cameraName, string endpoint, string macAddress, int pcID)
         {
             using (SqlConnection SqlConnection = new SqlConnection(ConnectionString))
@@ -243,6 +259,22 @@ namespace EdgePcConfigurationApp.Helpers
                 } 
             }
         }
+        public static int GetCameraIdByMacAddress(string macAddress)
+        {
+            using (SqlConnection SqlConnection = new SqlConnection(ConnectionString))
+            {
+                SqlConnection.Open();
+                string selectCameraByEndpoint = "SELECT id FROM Cameras WHERE Mac_Address = @mac";
+                using (SqlCommand command = new SqlCommand(selectCameraByEndpoint, SqlConnection))
+                {
+                    command.Parameters.AddWithValue("@mac", macAddress);
+                    using (SqlDataReader reader = command.ExecuteReader())
+                    {
+                        return reader.Read() ? reader.GetInt32(0) : -1;
+                    }
+                } 
+            }
+        }
 
         public static void UpdateTagMonitoredStatus(string tagName, int jobId, int monitored)
         {
@@ -364,6 +396,11 @@ namespace EdgePcConfigurationApp.Helpers
             }
         }
 
+        /// <summary>
+        /// This method will check to the DB to see if the provided GUID already exists within the database
+        /// </summary>
+        /// <param name="guid">String containing the PC GUID</param>
+        /// <returns>True if the provided GUID already exists in the DB. False if no matching GUID is found</returns>
         public static bool CheckPCExists(string guid)
         {
             //Check to see if a pc with a matching GUID exists
@@ -389,11 +426,23 @@ namespace EdgePcConfigurationApp.Helpers
                 throw;
             }
         }
+        /// <summary>
+        /// Generates a GUID for the Pc and stores the computer information alongside the GUID.
+        /// </summary>
+        /// <returns>Returns the gererated GUID for the PC</returns>
         public static string StoreComputer()
         {
             try
             {
-                string pcGuid = Guid.NewGuid().ToString();
+                string pcGuid;
+                //Check to make sure that GUID is unique and does not already exist
+                while (true)
+                {
+                    pcGuid = Guid.NewGuid().ToString();
+                    if (!CheckPCExists(pcGuid))
+                        break;
+                }
+                
                 string pcName = Environment.MachineName;
                 using (SqlConnection sqlConnection = new SqlConnection(ConnectionString))
                 {
