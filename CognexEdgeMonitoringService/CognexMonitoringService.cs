@@ -20,17 +20,19 @@ namespace CognexEdgeMonitoringService
     {
         private bool isRunning = false;
         private Thread edgeMonitoringThread = null;
-        private string countNodeId;
+        public static string countNodeId;
         public string connectionString = string.Empty;
         public ExeConfigurationFileMap fileMap = new ExeConfigurationFileMap();
         public Configuration serviceConfig;
         private List<CognexSession> ConnectedCameras = new List<CognexSession>();
-        EventLog eventLog = new EventLog("Application");
+        public static EventLog eventLog = new EventLog("Application");
+        public static FileWriterQueue fileWriterQueue;
+        public static string imageFileNameNodeID;
         public CognexMonitoringService()
         {
             InitializeComponent();
             eventLog.Source = "CognexMonitoringService";
-
+            fileWriterQueue = new FileWriterQueue(@"C:\Users\jverstraete\Desktop\DataDumps\Run1.csv");
         }
 
         protected override void OnStart(string[] args)
@@ -38,11 +40,9 @@ namespace CognexEdgeMonitoringService
             isRunning= true;
             
             //Setup Thread Pool
-            int workerThreads = 0;
-            int completionPortThreads = 0;
-            ThreadPool.GetMinThreads(out workerThreads, out completionPortThreads);
-            ThreadPool.SetMinThreads(3, completionPortThreads);
-            ThreadPool.SetMaxThreads(8, completionPortThreads);
+            ThreadPool.GetMinThreads(out var workerThreads, out var completionPortThreads);
+            ThreadPool.SetMinThreads(50, completionPortThreads);
+            ThreadPool.SetMaxThreads(1000, completionPortThreads);
             
             string filePath = @"C:\Users\jverstraete\Desktop\JunkChest\Cognex\FTP";
 
@@ -77,6 +77,7 @@ namespace CognexEdgeMonitoringService
             {
                 cognexSession.Session.Close();
                 cognexSession.Session.Dispose();
+                fileWriterQueue.CompleteAdding();
             }
         }
 
@@ -86,6 +87,7 @@ namespace CognexEdgeMonitoringService
             {
                 cognexSession.Session.Close();
                 cognexSession.Session.Dispose();
+                fileWriterQueue.CompleteAdding();
             }
         }
 
@@ -126,7 +128,6 @@ namespace CognexEdgeMonitoringService
             try
             {
                 CognexSession cognexSession = null;
-                countNodeId = "ns=2;s=Tasks.InspectionTask.Spreadsheet.AcquisitionCount";
                 ApplicationConfiguration opcConfig = await OPCUAUtils.InitializeApplication();
                 Session session = await OPCUAUtils.ConnectToServer(opcConfig, $"opc.tcp://{ipAddress}:4840");
                 ReferenceDescriptionCollection references;
@@ -148,24 +149,21 @@ namespace CognexEdgeMonitoringService
                 cognexSession.References = references;
                 ConnectedCameras.Add(cognexSession);
                 List<Tag> tags = await OPCUAUtils.BrowseChildren(cognexSession.Session, cognexSession.References);
+                bool insightExplorer = CheckInsightExplorer(tags);
+                countNodeId = insightExplorer ? "ns=2;s=InspectionComplete" : "ns=2;s=Tasks.InspectionTask.Spreadsheet.AcquisitionCount";
+                imageFileNameNodeID = insightExplorer ? "ns=2;s=ImageFileName" : "ns=2;s=Tasks.InspectionTask.Spreadsheet.ImageFileName";
                 string jobName = GetJobNameNew(cognexSession.Session, tags);
-                //Need to modify DB functions so that it gets the tags based on the job id and not the camera id.
-                //Once monitored tags are acquired it should be almost the same as before.
-                //Subscribe to tags and use event based monitoring on the acq count to know when to collect data.
-                //Also need to monitor the camera online status to only monitor tags when the camera is online.
-                //If the camera goes offline when it comes back online the program should recheck the job name to make sure the job hasn't changed
-                //If the job has changed then load the new tag configuration and proceed with monitoring.
-                //Will also need to figure out how to handle jobs that the monitoring service has never seen before
-                //Would like to handle this by requiring users to load the job at least once with the configurator app but that may not be an option.
                 int jobId = DatabaseUtils.GetJobIdFromName(jobName);
                 cognexSession.Tags = DatabaseUtils.GetMonitoredTags(jobId);
+                Tag imageFileName = new Tag("ImageFileName", imageFileNameNodeID);
+                cognexSession.Tags.Add(imageFileName);
                 cognexSession.Subscription = OPCUAUtils.CreateEventSubscription(cognexSession.Session);
-                OPCUAUtils.AddEventDrivenMonitoredItem(cognexSession.Subscription, countNodeId, cognexSession.Tags);
+                OPCUAUtils.StartMonitoring(cognexSession);
             
             }
             catch (Exception e)
             {
-                
+                eventLog.WriteEntry($"Failed to connect to camera IP Address: {ipAddress}, Error Message: {e.Message}, Stack Trace: {e.StackTrace}");
                 Console.WriteLine(e);
                 throw;
             }
@@ -221,6 +219,25 @@ namespace CognexEdgeMonitoringService
             }
 
             return result;
+        }
+        private bool CheckInsightExplorer(List<Tag> tags)
+        {
+            if (tags == null)
+                return false;
+            foreach (Tag tag in tags)
+            {
+                if (tag.Name == "SystemTags")
+                    return true;
+                else if(tag.Children.Count > 0)
+                {
+                    List<Tag> children = new List<Tag>(tag.Children);
+                    if (CheckInsightExplorer(children))
+                        return true; // Stop and return true if found in children
+                }
+            }
+
+            return false;
+
         }
 
         // #########OBSOLETE#############

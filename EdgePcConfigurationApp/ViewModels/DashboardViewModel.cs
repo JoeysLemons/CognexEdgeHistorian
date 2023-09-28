@@ -144,7 +144,7 @@ namespace EdgePcConfigurationApp.ViewModels
         }
 
         //Looks for cameras assigned to this PC and if detected will autoconnect to them.
-        public async Task SearchForPreviousCameras()
+        private async Task SearchForPreviousCameras()
         {
             string computerGuid = AppConfigUtils.GetComputerGUID();
             int pcID = DatabaseUtils.GetPCIdFromGUID(computerGuid);
@@ -168,7 +168,7 @@ namespace EdgePcConfigurationApp.ViewModels
             }
         }
 
-        public async Task CheckCameraOnline(CognexCamera camera)
+        private async Task CheckCameraOnline(CognexCamera camera)
         {
             App.Current.Dispatcher.Invoke(() => { camera.Connecting = true; });
             bool success = NetworkUtils.PingHost(camera.Endpoint);
@@ -199,7 +199,7 @@ namespace EdgePcConfigurationApp.ViewModels
         }
 
 
-        public async Task Refresh()
+        private async Task Refresh()
         {
             foreach (CognexCamera camera in CognexCameras)
             {
@@ -310,7 +310,7 @@ namespace EdgePcConfigurationApp.ViewModels
         }
 
         [RelayCommand]
-        public void DisconnectFromCamera()
+        private void DisconnectFromCamera()
         {
             if (CognexCameras.Count == 0)
                 return;
@@ -339,7 +339,7 @@ namespace EdgePcConfigurationApp.ViewModels
         }
         
         [RelayCommand]
-        public void RefreshCameras()
+        private void RefreshCameras()
         {
             Task.Run(Refresh);
             UnsycnedTags.Clear();
@@ -347,7 +347,7 @@ namespace EdgePcConfigurationApp.ViewModels
         }
 
         [RelayCommand]
-        public void SubscribeTag(object parameter)
+        private void SubscribeTag(object parameter)
         {
             try
             {
@@ -399,7 +399,7 @@ namespace EdgePcConfigurationApp.ViewModels
         }
 
         [RelayCommand]
-        public void ApplyChanges()
+        private void ApplyChanges()
         {
             if (SelectedCamera is null)
                 return;
@@ -422,7 +422,7 @@ namespace EdgePcConfigurationApp.ViewModels
         }
 
         [RelayCommand]
-        public void ResetTagBrowser()
+        private void ResetTagBrowser()
         {
             if (SelectedCamera is null)
                 return;
@@ -448,12 +448,12 @@ namespace EdgePcConfigurationApp.ViewModels
         }
 
         [RelayCommand]
-        public void ClearErrors()
+        private void ClearErrors()
         {
             ErrorMessage = string.Empty;
         }
         [RelayCommand]
-        public void SetCameraSettings(object parameter)
+        private void SetCameraSettings(object parameter)
         {
             CognexCamera camera = parameter as CognexCamera;
             CameraModifyWindow cameraSettingsWindow = new CameraModifyWindow();
@@ -463,13 +463,13 @@ namespace EdgePcConfigurationApp.ViewModels
             camera = viewModel.Camera;
         }
         [RelayCommand]
-        public void Debug()
+        private void Debug()
         {
             
         }
         
         [RelayCommand]
-        public void OpenAddCameraDialog()
+        private void OpenAddCameraDialog()
         {
             CameraAddWindow cameraSettingsWindow = new CameraAddWindow();
             cameraSettingsWindow.DataContext = new CameraInfoViewModel(cameraSettingsWindow, this);
@@ -478,7 +478,7 @@ namespace EdgePcConfigurationApp.ViewModels
         
         #endregion RelayCommands
 
-        public void ResetSyncIcons(ObservableCollection<Tag> tagList)
+        private void ResetSyncIcons(ObservableCollection<Tag> tagList)
         {
             foreach(Tag tag in tagList)
             {
@@ -494,7 +494,7 @@ namespace EdgePcConfigurationApp.ViewModels
         /// <param name="session">The OPC UA session.</param>
         /// <param name="references">The reference descriptions to browse.</param>
         /// <returns>An ObservableCollection of Tag objects representing the children.</returns>
-        public async Task<ObservableCollection<Tag>> BrowseChildren(Session session, ReferenceDescriptionCollection references)
+        private async Task<ObservableCollection<Tag>> BrowseChildren(Session session, ReferenceDescriptionCollection references)
         {
             try
             {
@@ -562,7 +562,7 @@ namespace EdgePcConfigurationApp.ViewModels
         /// </summary>
         /// <param name="tagList">A list of tags to display in the tag browser</param>
         /// <param name="searchParams">The list of tags names that are currently selected</param>
-        public void SetTagBrowserConfiguration(ObservableCollection<Tag> tagList, List<string> searchParams)
+        private void SetTagBrowserConfiguration(ObservableCollection<Tag> tagList, List<string> searchParams)
         {
             foreach(Tag tag in tagList)
             {
@@ -661,16 +661,26 @@ namespace EdgePcConfigurationApp.ViewModels
         /// currently loaded job file.
         /// </summary>
         /// <returns>false if no issues were found. True if there were issues</returns>
-        public bool CheckDefaultTagError()
+        private bool CheckDefaultTagError(bool insightExplorer)
         {
+            
             bool found = false;
             string acquisitionCount = "AcquisitionCount";
             string imageFileName = "ImageFileName";
             var acqCountTag = Tags.FirstOrDefault(tag => tag.Name == acquisitionCount);
             var imgFileNameTag = Tags.FirstOrDefault(tag => tag.Name == imageFileName);
 
-            if (acqCountTag is null || imgFileNameTag is null)
-                found = true;
+            if (insightExplorer)
+            {
+                if (imgFileNameTag is null)
+                    return true;
+            }
+            else
+            {
+                if (acqCountTag is null || imgFileNameTag is null)
+                    return true;
+            }
+            
             
             return found;
         }
@@ -720,7 +730,7 @@ namespace EdgePcConfigurationApp.ViewModels
                 //Gets all tags inside the spreadsheet directory in the OPC UA server
                 bool insightExplorer = CheckInsightExplorer(selectedCamera.Tags);
                 SearchTag(SelectedCamera.Tags, insightExplorer ? "JobTags" : "Spreadsheet");
-                SelectedCamera.DefaultTagError = CheckDefaultTagError();
+                SelectedCamera.DefaultTagError = CheckDefaultTagError(insightExplorer);
                 //Reads the loaded job from the OPC UA server and sets that as the currently selected job
                 SelectedJob = GetJobName(selectedCamera.Tags, insightExplorer ? "SystemTags" : "System");
                 int jobID = DatabaseUtils.StoreJob(SelectedJob, SelectedCamera.CameraID);

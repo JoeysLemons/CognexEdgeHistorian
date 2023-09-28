@@ -204,12 +204,13 @@ namespace EdgePcConfigurationApp.Helpers
             using (SqlConnection SqlConnection = new SqlConnection(ConnectionString))
             {
                 SqlConnection.Open();
-                string checkTagExists = "SELECT id FROM MonitoredTags WHERE Name = @tagName";
+                string checkTagExists = "SELECT id FROM MonitoredTags WHERE Name = @tagName AND Job_id = @jobId";
                 string insertTag = "INSERT INTO MonitoredTags (Job_id, Name, Node_id, Monitored) VALUES (@jobId, @tagName, @nodeId, @Monitored); SELECT SCOPE_IDENTITY();";
                 object existingTagId;
                 using (SqlCommand command = new SqlCommand(checkTagExists, SqlConnection))
                 {
                     command.Parameters.AddWithValue("@tagName", tagName);
+                    command.Parameters.AddWithValue("@jobId", jobId);
                     existingTagId = command.ExecuteScalar();
                 }
                 if (existingTagId != null)

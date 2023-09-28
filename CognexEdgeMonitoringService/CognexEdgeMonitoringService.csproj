@@ -279,6 +279,8 @@
     </Compile>
     <Compile Include="Core\DatabaseUtils.cs" />
     <Compile Include="Core\DatabaseUtilsOLD.cs" />
+    <Compile Include="Core\DataDumper.cs" />
+    <Compile Include="Core\FileWriterQueue.cs" />
     <Compile Include="Core\FolderMonitor.cs" />
     <Compile Include="Core\OPCUAUtils.cs" />
     <Compile Include="Core\TelnetUtils.cs" />

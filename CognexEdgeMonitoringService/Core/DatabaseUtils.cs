@@ -138,16 +138,17 @@ namespace CognexEdgeMonitoringService.Core
             }
         }
 
-        public static void StoreTagValue(int tagId, string value, string timestamp)    //! Need to add support for storing an image as a blob later on down the line
+        public static void StoreTagValue(int tagId, string value, string associatedImage, string timestamp)    //! Need to add support for storing an image as a blob later on down the line
         {
             using (SqlConnection SqlConnection = new SqlConnection(ConnectionString))
             {
                 SqlConnection.Open();
-                string insertTagValue = "INSERT INTO MonitoredTagValues (tag_id, value, timestamp) VALUES (@tagId, @value, @timestamp)";
+                string insertTagValue = "INSERT INTO MonitoredTagValues (tag_id, value, Associated_Image, Timestamp) VALUES (@tagId, @value, @associatedImage, @timestamp)";
                 using (SqlCommand command = new SqlCommand(insertTagValue, SqlConnection))
                 {
                     command.Parameters.AddWithValue("@tagId", tagId);
                     command.Parameters.AddWithValue("@value", value);
+                    command.Parameters.AddWithValue("@associatedImage", associatedImage);
                     command.Parameters.AddWithValue("@timestamp", timestamp);
                     command.ExecuteNonQuery();
                 }

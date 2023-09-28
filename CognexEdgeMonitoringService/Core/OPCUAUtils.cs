@@ -17,8 +17,12 @@ namespace CognexEdgeMonitoringService.Core
 {
     public class OPCUAUtils
     {
-        private static string imageNameNodeID;
-        private static string ftpDirectory;
+        private static string ftpDirectory = @"C:\Users\jverstraete\Desktop\JunkChest\Cognex\FTP";
+        private static bool pushingData = false;
+        private static readonly object lockObject = new object();
+        private static Timer timer;
+        private static Stopwatch stopwatch = new Stopwatch();
+
         public static async Task<ApplicationConfiguration> InitializeApplication()
         {
             var config = CreateApplicationConfiguration();
@@ -32,6 +36,8 @@ namespace CognexEdgeMonitoringService.Core
             }
 
             var cert = config.SecurityConfiguration.ApplicationCertificate.Find(true).Result;
+            TimeZoneInfo estZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
+            DateTime estTime = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, estZone);
             if (cert == null)
             {
 #pragma warning disable CS0618 // Type or member is obsolete
@@ -44,7 +50,7 @@ namespace CognexEdgeMonitoringService.Core
                     config.SecurityConfiguration.ApplicationCertificate.SubjectName,
                     null,
                     2048, // Key size.
-                    DateTime.UtcNow - TimeSpan.FromDays(1),
+                    estTime - TimeSpan.FromDays(1),
                     12, // Validity period in months.
                     0, // pathLengthConstraint (ushort)
                     false // isCA (bool)
@@ -244,6 +250,218 @@ namespace CognexEdgeMonitoringService.Core
             }
         }
 
+        public static void StartMonitoring(CognexSession cognexSession)
+        {
+            try
+            {
+                timer = new Timer(ReadTags, cognexSession, 0, 10);
+                PushData(cognexSession);
+            }
+            catch (Exception e)
+            {
+                CognexMonitoringService.eventLog.WriteEntry($"Error while starting timer and push data. error: {e.Message} stack trace: {e.StackTrace}");
+                throw;
+            }
+            
+        }
+
+        private static void ReadTags(object state)
+        {
+            CognexSession cognexSession = state as CognexSession;
+            ReadValueIdCollection nodesToRead = new ReadValueIdCollection();
+            if (cognexSession == null)
+                return;
+            double elapsedMilliseconds;
+            try
+            {
+                stopwatch.Restart();
+                lock (lockObject)
+                {
+                    stopwatch.Stop();
+                    double lockTime = stopwatch.ElapsedMilliseconds;
+                    stopwatch.Restart();
+                    foreach (Tag tag in cognexSession.Tags)
+                    {
+                        nodesToRead.Add(new ReadValueId
+                            { NodeId = new NodeId(tag.NodeId), AttributeId = Attributes.Value });
+                    }
+                    
+
+                    DataValueCollection results;
+                    DiagnosticInfoCollection diagnosticInfos;
+                    cognexSession.Session.Read(
+                        null,
+                        0,
+                        TimestampsToReturn.Both,
+                        nodesToRead,
+                        out results,
+                        out diagnosticInfos
+                    );
+                    
+                    stopwatch.Stop();
+                    double readTime = stopwatch.ElapsedMilliseconds;
+                    stopwatch.Restart();
+                    // Process the results
+                    for (int i = 0; i < results.Count; i++)
+                    {
+                        DataValue value = results[i];
+                        string nodeId = nodesToRead[i].NodeId.ToString();
+
+                        // Find the corresponding tag and update its value
+                        Tag tag = cognexSession.Tags.Find(t => t.NodeId == nodeId);
+                        if (tag != null)
+                        {
+                            tag.Value = value.Value;
+                            tag.Timestamp = value.SourceTimestamp.ToString("yyyy-MM-dd HH:mm:ss.fff");
+                            Console.WriteLine($"Tag {tag.NodeId}: {value.Value}");
+                            //CognexMonitoringService.eventLog.WriteEntry($"Tag: {tag.Name}, Node ID: {tag.NodeId}, Value: {value.Value}");
+                        }
+                    }
+                    stopwatch.Stop();
+                    elapsedMilliseconds = stopwatch.ElapsedMilliseconds;
+                    CognexMonitoringService.eventLog.WriteEntry($"Lock time: {lockTime}, Read Time: {readTime}, Process Time: {elapsedMilliseconds}");
+                }
+
+            }
+            catch (Exception e)
+            {
+                CognexMonitoringService.eventLog.WriteEntry($"Error in the timer method. Error code: {e.Message} StackTrace: {e.StackTrace}");
+                throw;
+            }
+        }
+
+        public static void PushData(CognexSession cognexSession)
+        {
+            try
+            {
+                MonitoredItem monitoredItem = new MonitoredItem(cognexSession.Subscription.DefaultItem)
+                {
+                    DisplayName = "Acquisition Complete",
+                    StartNodeId = new NodeId(CognexMonitoringService.countNodeId),
+                    AttributeId = Attributes.Value,
+                    MonitoringMode = MonitoringMode.Reporting,
+                    SamplingInterval = -1, // Set the desired sampling interval (in milliseconds)
+                    QueueSize = 1,
+                    DiscardOldest = true
+                };
+
+                // Set the callback for value changes
+                monitoredItem.Notification += async (item, args) => PushDataCallback(cognexSession.Tags);
+            
+
+                // Add the monitored item to the subscription
+                cognexSession.Subscription.AddItem(monitoredItem);
+
+                // Apply the changes on the server
+                cognexSession.Subscription.ApplyChanges();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+        }
+
+        public static void PushDataCallback(List<Tag> tags)
+        {
+            try
+            {
+                
+                lock (lockObject)
+                {
+                    Tag imageFileName = tags.Find(t => t.Name == "ImageFileName");
+                    foreach (Tag tag in tags)
+                    {
+                        if (tag.Name == "ImageFileName")
+                            continue;
+                        tag.AssociatedImageName = imageFileName.Value?.ToString() ?? "NoImageRecieved";
+                        string data = $"{tag.ID},{tag.Value},{tag.AssociatedImageName},{tag.Timestamp}";
+                        //CognexMonitoringService.eventLog.WriteEntry(data);
+                        CognexMonitoringService.fileWriterQueue.Enqueue(data);
+                        //DatabaseUtils.StoreTagValue(tag.ID, tag.Value?.ToString() ?? "", tag.AssociatedImageName, tag.Timestamp);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                CognexMonitoringService.eventLog.WriteEntry(
+                    $"Error while writing data. Error: {e.Message}, Stack Trace: {e.StackTrace}");
+            }
+            
+        }
+
+
+        public static void AddEventDrivenMonitoredItem(Subscription subscription, Tag tag)
+        {
+            try
+            {
+                MonitoredItem monitoredItem = new MonitoredItem(subscription.DefaultItem)
+                {
+                    DisplayName = tag.Name,
+                    StartNodeId = new NodeId(tag.NodeId),
+                    AttributeId = Attributes.Value,
+                    MonitoringMode = MonitoringMode.Reporting,
+                    SamplingInterval = -1, // Set the desired sampling interval (in milliseconds)
+                    QueueSize = 1,
+                    DiscardOldest = true
+                };
+
+                // Set the callback for value changes
+                monitoredItem.Notification += async (item, args) => TagMonitorCallback(tag, subscription);
+            
+
+                // Add the monitored item to the subscription
+                subscription.AddItem(monitoredItem);
+
+                // Apply the changes on the server
+                subscription.ApplyChanges();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+        }
+
+        public static async void TagMonitorCallback(Tag tag, Subscription subscription)
+        {
+            if (pushingData)
+                return;
+            
+            ReadResponse response = await subscription.Session.ReadAsync(
+                null,
+                0,
+                TimestampsToReturn.Both,
+                new ReadValueIdCollection
+                {
+                    new ReadValueId()
+                    {
+                        NodeId = tag.NodeId,
+                        AttributeId = Attributes.Value,
+                    }
+                },
+            CancellationToken.None);
+
+            tag.Value = response.Results[0].Value.ToString();
+            tag.Timestamp = response.Results[0].ServerTimestamp.ToString("yyyy-MM-dd HH:mm:ss.fff");
+            ReadResponse imageResponse = await subscription.Session.ReadAsync(
+                null,
+                0,
+                TimestampsToReturn.Both,
+                new ReadValueIdCollection
+                {
+                    new ReadValueId()
+                    {
+                        NodeId = CognexMonitoringService.imageFileNameNodeID,
+                        AttributeId = Attributes.Value,
+                    }
+                },
+                CancellationToken.None);
+            tag.AssociatedImageName = imageResponse.Results[0].Value.ToString();
+            CognexMonitoringService.eventLog.WriteEntry($"Tag ID: {tag.ID}, Tag Value: {tag.Value}, Associated Image: {tag.AssociatedImageName}, Timestamp: {tag.Timestamp}");
+        }
+        
+
         public static async void EventCallback(List<Tag> tags, Subscription subscription)
         {
             // Read the values of the other nodes
@@ -265,31 +483,79 @@ namespace CognexEdgeMonitoringService.Core
                             }
                         },
                         CancellationToken.None);
-
-                    if (tag.NodeId == imageNameNodeID)
-                    {
-                        tag.AssociatedImageName = response.Results[0].Value.ToString();
-                        GetAssociatedImage(tag);
-                    }
+                    
+        
+                    // if (tag.NodeId == CognexMonitoringService.imageFileNameNodeID)
+                    // {
+                    //     tag.AssociatedImageName = response.Results[0].Value.ToString();
+                    //     GetAssociatedImage(tag);
+                    // }
                     try
                     {
                         Trace.WriteLine(response.Results[0].Value.ToString());
                         Trace.WriteLine($"OPC Trigger Server Time: {response.Results[0].ServerTimestamp.ToString("yyyy-MM-dd HH:mm:ss.fff")}");
-                        DatabaseUtilsOLD.StoreTagValue(tag.ID, response.Results[0].Value.ToString(), response.Results[0].SourceTimestamp.ToString());
+                        //read image name
+                        ReadResponse imageResponse = await subscription.Session.ReadAsync(
+                            null,
+                            0,
+                            TimestampsToReturn.Both,
+                            new ReadValueIdCollection
+                            {
+                                new ReadValueId()
+                                {
+                                    NodeId = CognexMonitoringService.imageFileNameNodeID,
+                                    AttributeId = Attributes.Value,
+                                }
+                            },
+                            CancellationToken.None);
+                        CognexMonitoringService.eventLog.WriteEntry($"Tag ID: {tag.ID}");
+                        CognexMonitoringService.eventLog.WriteEntry($"Tag ID: {tag.ID}");
+                        CognexMonitoringService.eventLog.WriteEntry($"Tag ID: {tag.ID}");
+                        DatabaseUtils.StoreTagValue(tag.ID, response.Results[0].Value.ToString(), imageResponse.Results[0].Value.ToString(), response.Results[0].SourceTimestamp.ToString("yyyy-MM-dd HH:mm:ss.fff"));
+                        //Dump packet to .csv file for debug purposes. Should be removed in final release
+                        string data = $"{tag.ID},{response.Results[0].Value},{imageResponse.Results[0].Value},{response.Results[0].SourceTimestamp.ToString("yyyy-MM-dd HH:mm:ss.fff")}";
+                        CognexMonitoringService.fileWriterQueue.Enqueue(data);
                     }
                     catch (SqlException ex)
                     {
                         Trace.WriteLine($"Error while writing values to the database. Error Message: {ex.Message}");
+                        CognexMonitoringService.eventLog.WriteEntry($"There was an error while attempting to write Tag: {tag.Name} to the Database. Error Message: {ex.Message}, Stack Trace: {ex.StackTrace}");
                         return;
                     }
                 }
                 catch (Exception ex)
                 {
                     Trace.WriteLine($"Something went wrong while monitoring tag values. Error Message: {ex.Message}");
+                    CognexMonitoringService.eventLog.WriteEntry($"There was an error while trying to read a tag value. Tag Name: {tag.Name} Error Message: {ex.Message}, Stack Trace: {ex.StackTrace}");
                     return;
                 }
             }
         }
+
+
+        // public static async void EventCallback(List<Tag> tags)
+        // {
+        //     try
+        //     {
+        //         pushingData = true;
+        //         foreach (Tag tag in tags)
+        //         {
+        //             DatabaseUtils.StoreTagValue(tag.ID, tag.Value.ToString(), tag.AssociatedImageName, tag.Timestamp);
+        //             string data = $"{tag.ID},{tag.Value},{tag.AssociatedImageName},{tag.Timestamp}";
+        //             CognexMonitoringService.fileWriterQueue.Enqueue(data);
+        //         }
+        //
+        //         pushingData = false;
+        //     }
+        //     catch (SqlException ex)
+        //     {
+        //         pushingData = false;
+        //     }
+        //     catch (Exception ex)
+        //     {
+        //         pushingData = false;
+        //     }
+        // }
 
         public static Task<string> GetAssociatedImage(Tag tag)
         {
