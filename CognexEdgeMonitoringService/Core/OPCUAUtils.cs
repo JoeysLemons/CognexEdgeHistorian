@@ -301,6 +301,9 @@ namespace CognexEdgeMonitoringService.Core
                     stopwatch.Stop();
                     double readTime = stopwatch.ElapsedMilliseconds;
                     stopwatch.Restart();
+                    //IMPORTANT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                    //!Should test starting the lock here we really only need to lock when writing to the collection
+                    //IMPORTANT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                     // Process the results
                     for (int i = 0; i < results.Count; i++)
                     {
@@ -366,7 +369,8 @@ namespace CognexEdgeMonitoringService.Core
         {
             try
             {
-                
+                //Locking here is done not for thread safety but more for data integrity we do not want new data to be written to the collection while
+                //      a set of data is being written into record
                 lock (lockObject)
                 {
                     Tag imageFileName = tags.Find(t => t.Name == "ImageFileName");
