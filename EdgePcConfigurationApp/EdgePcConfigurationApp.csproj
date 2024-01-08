@@ -17,6 +17,7 @@
   <ItemGroup>
     <PackageReference Include="Npgsql" Version="8.0.0-preview.4" />
     <PackageReference Include="OPCFoundation.NetStandard.Opc.Ua" Version="1.4.371.86" />
+    <PackageReference Include="OxyPlot.Core" Version="2.1.2" />
     <PackageReference Include="SimpleModal.WPF" Version="1.0.0" />
     <PackageReference Include="SQLite" Version="3.13.0" />
     <PackageReference Include="System.Data.SQLite" Version="1.0.117" />
@@ -37,6 +38,9 @@
     <None Remove="Assets\icons8-settings-64.png" />
     <None Remove="Controls\**" />
     <None Remove="appsettings.json" />
+    <None Update="AppSettings.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
   <ItemGroup>
@@ -60,6 +64,7 @@
       <XamlRuntime>Wpf</XamlRuntime>
       <SubType>Designer</SubType>
     </Page>
+    <Page Remove="Views\Pages\DataHistorianView.xaml" />
   </ItemGroup>
 
   <ItemGroup>
@@ -68,6 +73,10 @@
     <Compile Remove="Views\Pages\CameraInfoPage.xaml.cs" />
     <Compile Remove="Views\Pages\ConnectionsPage.xaml.cs" />
     <Compile Remove="ViewModels\ConnectionsViewModel.cs" />
+    <Compile Remove="ViewModels\DataHistorianViewModel.cs" />
+    <Compile Remove="Models\GraphProperties.cs" />
+    <Compile Remove="Models\DataViewProperty.cs" />
+    <Compile Remove="Views\Pages\DataHistorianView.xaml.cs" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,6 +1,7 @@
 ﻿using Opc.Ua;
 using Opc.Ua.Client;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -16,6 +17,7 @@ namespace CognexEdgeMonitoringService.Models
         public string SessionName { get; }
         public List<Tag> Tags { get; set; }
         public List<string> NodeIds { get; set; }
+        public ConcurrentQueue<Tag> TagWriteQueue { get; set; } = new ConcurrentQueue<Tag>();
         public ReferenceDescriptionCollection References { get; set; }
         public Subscription Subscription { get; set; }
 

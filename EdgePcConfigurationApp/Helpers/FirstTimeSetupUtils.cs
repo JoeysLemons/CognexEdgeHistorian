@@ -1,11 +1,12 @@
 ﻿using System;
+using System.IO;
 using System.Xml;
 
 namespace EdgePcConfigurationApp.Helpers;
 
 public class FirstTimeSetupUtils
 {
-    private static string xmlFilePath = "../../../AppSettings.xml";
+    private static string xmlFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "AppSettings.xml");
 
     public static int RegisterComputer()
     {

@@ -1,4 +1,5 @@
-﻿using EdgePcConfigurationApp.Models;
+﻿using System;
+using EdgePcConfigurationApp.Models;
 using EdgePcConfigurationApp.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -94,7 +95,35 @@ namespace EdgePcConfigurationApp
         /// </summary>
         private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
         {
-            // For more info see https://docs.microsoft.com/en-us/dotnet/api/system.windows.application.dispatcherunhandledexception?view=windowsdesktop-6.0
+            string logFilePath = @"C:\Users\jverstraete\Desktop\DumpFiles"; // Update the path as needed
+
+            try
+            {
+                // Create a message to log
+                string message = $"Exception occurred: {DateTime.Now}\n" +
+                                 $"Message: {e.Exception.Message}\n" +
+                                 $"StackTrace: {e.Exception.StackTrace}\n" +
+                                 "-----------------------------------------\n";
+
+                // Check if the directory exists and create it if it doesn't
+                string dirPath = Path.GetDirectoryName(logFilePath);
+                if (!Directory.Exists(dirPath))
+                {
+                    Directory.CreateDirectory(dirPath);
+                }
+
+                // Append the message to the log file
+                File.AppendAllText(logFilePath, message);
+
+                // Optional: if you want to prevent the application from shutting down
+                // e.Handled = true;
+            }
+            catch (Exception ex)
+            {
+                // Handle any exceptions that occur during the logging process
+                // For example, you might want to show a message box or perform some other kind of notification
+                Console.WriteLine("An error occurred while logging the exception: " + ex.Message);
+            }
         }
     }
 }

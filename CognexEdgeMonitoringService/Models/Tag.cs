@@ -44,5 +44,14 @@ namespace CognexEdgeMonitoringService.Models
 			Name = name;
 			NodeId = nodeId;
 		}
+
+		public Tag(Tag copyTag)
+		{
+			this.ID = copyTag.ID;
+			this.Name = copyTag.Name;
+			this.AssociatedImageName = copyTag.AssociatedImageName;
+			this.Value = copyTag.Value;
+			this.Timestamp = copyTag.Timestamp;
+		}
     }
 }

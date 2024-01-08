@@ -10,6 +10,7 @@ using System;
 using System.Data;
 using System.Threading.Tasks;
 using System.Diagnostics;
+using System.Linq;
 using CognexEdgeMonitoringService;
 using Opc.Ua.Server;
 using Session = Opc.Ua.Client.Session;
@@ -28,6 +29,8 @@ namespace CognexEdgeMonitoringService
         public static EventLog eventLog = new EventLog("Application");
         public static FileWriterQueue fileWriterQueue;
         public static string imageFileNameNodeID;
+        public string pcGUID;
+        public int pcID;
         public CognexMonitoringService()
         {
             InitializeComponent();
@@ -48,8 +51,9 @@ namespace CognexEdgeMonitoringService
 
             try
             {
-                List<string> cameraAddresses = GetCameras();
-                SpawnCameraMonitors(cameraAddresses);
+                SetDBConnectionString();
+                GetPcId();
+                SpawnCameraMonitors();
             }
             catch (Exception e)
             {
@@ -97,7 +101,18 @@ namespace CognexEdgeMonitoringService
             Trace.WriteLine($"Error while attempting to subscribe to tag.\nError Message: {errMsg} \nTag Name: {name}\nNode ID: {nodeId}");
         }
 
+        private void GetPcId()
+        {
+            pcID = DatabaseUtils.GetPCIdFromGUID(pcGUID);
+        }
         private List<string> GetCameras()
+        {
+            
+            List<string> cameraAddresses = DatabaseUtils.GetCamerasOnPC(pcID);
+            return cameraAddresses;
+        }
+
+        private void SetDBConnectionString()
         {
             var filePath = @"C:\Users\jverstraete\source\repos\CognexEdgeHistorian\EdgePcConfigurationApp\AppSettings.xml";
             XmlDocument doc = new XmlDocument();
@@ -105,21 +120,25 @@ namespace CognexEdgeMonitoringService
             XmlNode rootNode = doc.DocumentElement;
             XmlNode pcSettings = rootNode.SelectSingleNode("PCSettings");
             XmlNode DatabaseSettings = rootNode.SelectSingleNode("Database");
-            string pcGUID = pcSettings.SelectSingleNode("ComputerGUID").InnerText;
+            pcGUID = pcSettings.SelectSingleNode("ComputerGUID").InnerText;
             string connectionString = DatabaseSettings.SelectSingleNode("ConnectionString").InnerText;
             eventLog.WriteEntry($"Connection String {connectionString}");
             DatabaseUtils.ConnectionString = connectionString;
-
-            int pcID = DatabaseUtils.GetPCIdFromGUID(pcGUID);
-            List<string> cameraAddresses = DatabaseUtils.GetCamerasOnPC(pcID);
-            return cameraAddresses;
         }
 
-        private void SpawnCameraMonitors(List<string> cameraAddresses)
+        private void SpawnCameraMonitors()
         {
-            foreach (string address in cameraAddresses)
+            List<string> cameraAddresses = new List<string>();
+            while (true)
             {
-                Task.Run(() => CameraMonitor(address));
+                cameraAddresses = DatabaseUtils.GetCamerasOnPC(pcID);
+                foreach (string address in cameraAddresses)
+                {
+                    if(ConnectedCameras.Any(session => session.Endpoint == address))    //Skip addresses that are already connected
+                        continue;
+                    Task.Run(() => CameraMonitor(address));
+                }
+                Thread.Sleep(30000);
             }
         }
 
@@ -153,6 +172,7 @@ namespace CognexEdgeMonitoringService
                 countNodeId = insightExplorer ? "ns=2;s=InspectionComplete" : "ns=2;s=Tasks.InspectionTask.Spreadsheet.AcquisitionCount";
                 imageFileNameNodeID = insightExplorer ? "ns=2;s=ImageFileName" : "ns=2;s=Tasks.InspectionTask.Spreadsheet.ImageFileName";
                 string jobName = GetJobNameNew(cognexSession.Session, tags);
+                CognexMonitoringService.eventLog.WriteEntry($"Job Name: {jobName}", EventLogEntryType.Error);
                 int jobId = DatabaseUtils.GetJobIdFromName(jobName);
                 cognexSession.Tags = DatabaseUtils.GetMonitoredTags(jobId);
                 Tag imageFileName = new Tag("ImageFileName", imageFileNameNodeID);
@@ -240,55 +260,6 @@ namespace CognexEdgeMonitoringService
 
         }
 
-        // #########OBSOLETE#############
-        // private async void EdgeMonitoringWorker()
-        // {
-        //     string location = string.Empty;
-        //     try
-        //     {
-        //         location = "AdamsTesting";
-        //         countNodeId = "ns=2;s=Tasks.InspectionTask.Spreadsheet.AcquisitionCount";
-        //
-        //
-        //         //location = serviceConfig.AppSettings.Settings["Location"].Value; //Get Location from config
-        //         //Console.WriteLine(location);
-        //         //connectionString = serviceConfig.ConnectionStrings.ConnectionStrings["MainConnectionString"].ConnectionString;   //Get connection string from config
-        //         //countNodeId = serviceConfig.AppSettings.Settings["CountNodeId"].Value;
-        //     }
-        //     catch (NullReferenceException ex)
-        //     {
-        //         Trace.WriteLine($"Failed to find connection string or location, node path may be incorrect. Error Message: {ex.Message}");
-        //     }
-        //
-        //     var locationId = GetLocationId(location);
-        //     List<int> cameraIds = GetCameraId(locationId);
-        //     List<CognexSession> sessions = new List<CognexSession>();
-        //     //DatabaseUtils.ConnectionString = connectionString;
-        //     try
-        //     {
-        //         foreach(int id in cameraIds)
-        //         {
-        //             string endpoint = DatabaseUtilsOLD.GetCameraEndpointFromId(id);
-        //         
-        //             var opcConfig = OPCUAUtils.CreateApplicationConfiguration();
-        //             await OPCUAUtils.InitializeApplication();
-        //             Session session = await OPCUAUtils.ConnectToServer(opcConfig, $"opc.tcp://{endpoint}:4840");
-        //             CognexSession cognexSession = new CognexSession(session, endpoint, session.SessionName, id);
-        //             cognexSession.Tags = DatabaseUtilsOLD.GetMonitoredTags(cognexSession.ID);
-        //             cognexSession.Subscription = OPCUAUtils.CreateEventSubscription(cognexSession.Session);
-        //             OPCUAUtils.AddEventDrivenMonitoredItem(cognexSession.Subscription, countNodeId, cognexSession.Tags);
-        //             sessions.Add(cognexSession);
-        //         }
-        //     }
-        //     catch (Exception ex)
-        //     {
-        //         Console.WriteLine(ex);
-        //         throw;
-        //     }
-        // }
-
-        
-        
         public int GetLocationId(string location)
         {
             int locationId = DatabaseUtilsOLD.GetLocationId(location);

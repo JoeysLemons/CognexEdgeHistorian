@@ -5,6 +5,7 @@ using System;
 using System.Configuration;
 using System.Data.Entity;
 using System.Diagnostics;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Xml;
@@ -37,7 +38,7 @@ namespace EdgePcConfigurationApp.Views.Windows
             WindowStyle = WindowStyle.None;
 
             XmlDocument doc = new XmlDocument();
-            doc.Load("../../../AppSettings.xml");
+            doc.Load(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "AppSettings.xml"));
             XmlNode root = doc.DocumentElement;
             XmlNode dbSettings = root.SelectSingleNode("Database");
             
