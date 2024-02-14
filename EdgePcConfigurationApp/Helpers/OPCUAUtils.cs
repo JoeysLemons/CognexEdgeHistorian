@@ -2,55 +2,95 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 using Opc.Ua.Client;
 using Opc.Ua.Configuration;
 using Opc.Ua;
+using Org.BouncyCastle.Asn1.X509;
+using Org.BouncyCastle.Crypto;
+using Org.BouncyCastle.Crypto.Generators;
+using Org.BouncyCastle.Crypto.Prng;
+using Org.BouncyCastle.Math;
+using Org.BouncyCastle.Security;
+using Org.BouncyCastle.X509;
+using CertificateRequest = Org.BouncyCastle.Tls.CertificateRequest;
+using HashAlgorithm = Org.BouncyCastle.Tls.HashAlgorithm;
 
 namespace EdgePcConfigurationApp.Helpers
 {
     public class OPCUAUtils
     {
+        static X509Certificate2 FindCertificate(string certName)
+        {
+            // Access the Personal store for the current user
+            X509Store store = new X509Store(StoreName.My, StoreLocation.CurrentUser);
+
+            try
+            {
+                store.Open(OpenFlags.ReadOnly);
+
+                // Find the certificate by name
+                X509Certificate2Collection certificates = store.Certificates.Find(X509FindType.FindBySubjectName, certName, false);
+
+                return certificates.Count > 0 ? certificates[0] : null;
+            }
+            finally
+            {
+                store.Close();
+            }
+        }
+//         public static async Task<ApplicationConfiguration> InitializeApplication()
+//         {
+//             var config = CreateApplicationConfiguration();
+//             await config.Validate(ApplicationType.Client);
+//             X509Certificate2 x509Cert = GenerateCertificate("OPCCert");
+//
+//             // Check if the application certificate exists, and create a new one if it doesn't.
+//             bool haveAppCertificate = config.SecurityConfiguration.ApplicationCertificate != null && !string.IsNullOrEmpty(config.SecurityConfiguration.ApplicationCertificate.SubjectName);
+//             if (!haveAppCertificate)
+//             {
+//                 throw new Exception("Application certificate must be configured!");
+//             }
+//
+//             var cert = config.SecurityConfiguration.ApplicationCertificate.Find(true).Result;
+//             if (cert == null)
+//             {
+// #pragma warning disable CS0618 // Type or member is obsolete
+//                 x509Cert = CertificateFactory.CreateCertificate(
+//                     config.SecurityConfiguration.ApplicationCertificate.StoreType,
+//                     config.SecurityConfiguration.ApplicationCertificate.StorePath,
+//                     null,
+//                     config.ApplicationUri,
+//                     config.ApplicationName,
+//                     config.SecurityConfiguration.ApplicationCertificate.SubjectName,
+//                     null,
+//                     2048, // Key size.
+//                     DateTime.UtcNow - TimeSpan.FromDays(1),
+//                     12, // Validity period in months.
+//                     0, // pathLengthConstraint (ushort)
+//                     false // isCA (bool)
+//                 );
+// #pragma warning restore CS0618 // Type or member is obsolete
+//             }
+//             config.SecurityConfiguration.RejectSHA1SignedCertificates = false;
+//             config.SecurityConfiguration.ApplicationCertificate.Certificate = cert;
+//
+//             return config;
+//         }
+        
+        
         public static async Task<ApplicationConfiguration> InitializeApplication()
         {
             var config = CreateApplicationConfiguration();
             await config.Validate(ApplicationType.Client);
-
-            // Check if the application certificate exists, and create a new one if it doesn't.
-            bool haveAppCertificate = config.SecurityConfiguration.ApplicationCertificate != null && !string.IsNullOrEmpty(config.SecurityConfiguration.ApplicationCertificate.SubjectName);
-            if (!haveAppCertificate)
-            {
-                throw new Exception("Application certificate must be configured!");
-            }
-
-            var cert = config.SecurityConfiguration.ApplicationCertificate.Find(true).Result;
-            if (cert == null)
-            {
-#pragma warning disable CS0618 // Type or member is obsolete
-                cert = CertificateFactory.CreateCertificate(
-                    config.SecurityConfiguration.ApplicationCertificate.StoreType,
-                    config.SecurityConfiguration.ApplicationCertificate.StorePath,
-                    null,
-                    config.ApplicationUri,
-                    config.ApplicationName,
-                    config.SecurityConfiguration.ApplicationCertificate.SubjectName,
-                    null,
-                    2048, // Key size.
-                    DateTime.UtcNow - TimeSpan.FromDays(1),
-                    12, // Validity period in months.
-                    0, // pathLengthConstraint (ushort)
-                    false // isCA (bool)
-                );
-#pragma warning restore CS0618 // Type or member is obsolete
-            }
-
-
+            var cert = FindCertificate("CognexEdgeHistorianOpcUaClient");
             config.SecurityConfiguration.ApplicationCertificate.Certificate = cert;
 
             return config;
         }
-
         public static ApplicationConfiguration CreateApplicationConfiguration()
         {
             var applicationName = "CognexEdgeHistorianOpcUaClient";
@@ -85,7 +125,8 @@ namespace EdgePcConfigurationApp.Helpers
                         StoreType = "Directory",
                         StorePath = @"%CommonApplicationData%\OPC Foundation\CertificateStores\RejectedCertificates"
                     },
-                    AutoAcceptUntrustedCertificates = true
+                    AutoAcceptUntrustedCertificates = true,
+                    RejectSHA1SignedCertificates = false
                 },
                 TransportConfigurations = new TransportConfigurationCollection(),
                 TransportQuotas = new TransportQuotas { OperationTimeout = 15000 },
@@ -94,6 +135,31 @@ namespace EdgePcConfigurationApp.Helpers
             };
 
             return config;
+        }
+        
+        static X509Certificate2 GenerateCertificate(string certName)
+        {
+            var keypairgen = new RsaKeyPairGenerator();
+            keypairgen.Init(new KeyGenerationParameters(new SecureRandom(new CryptoApiRandomGenerator()), 1024));
+
+            var keypair = keypairgen.GenerateKeyPair();
+
+            var gen = new X509V3CertificateGenerator();
+
+            var CN = new X509Name("CN=" + certName);
+            var SN = BigInteger.ProbablePrime(120, new Random());
+
+            gen.SetSerialNumber(SN);
+            gen.SetSubjectDN(CN);
+            gen.SetIssuerDN(CN);
+            gen.SetNotAfter(DateTime.MaxValue);
+            gen.SetNotBefore(DateTime.Now.Subtract(new TimeSpan(7, 0, 0, 0)));
+            gen.SetSignatureAlgorithm("SHA256WithRSA");
+            gen.SetPublicKey(keypair.Public);           
+
+            var newCert = gen.Generate(keypair.Private);
+
+            return new X509Certificate2(DotNetUtilities.ToX509Certificate((Org.BouncyCastle.X509.X509Certificate)newCert));
         }
         public static async Task<Opc.Ua.Client.Session> ConnectToServer(ApplicationConfiguration config, string serverUrl)
         {

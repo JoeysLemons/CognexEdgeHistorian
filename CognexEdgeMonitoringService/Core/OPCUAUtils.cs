@@ -14,6 +14,7 @@ using CognexEdgeMonitoringService.Models;
 using System.Threading;
 using System.Data.SqlClient;
 using System.IO;
+using System.Security.Cryptography.X509Certificates;
 using System.Text.RegularExpressions;
 using Org.BouncyCastle.Crypto.Modes;
 
@@ -24,48 +25,77 @@ namespace CognexEdgeMonitoringService.Core
         private static string ftpDirectory = @"C:\Users\jverstraete\Desktop\JunkChest\Cognex\FTP";
         private static bool pushingData = false;
         private static readonly object lockObject = new object();
+        private static string cameraOnlineNode = "ns=2;s=Online";
         private static Timer timer;
         private static Stopwatch stopwatch = new Stopwatch();
 
+//         public static async Task<ApplicationConfiguration> InitializeApplication()
+//         {
+//             var config = CreateApplicationConfiguration();
+//             await config.Validate(ApplicationType.Client);
+//
+//             // Check if the application certificate exists, and create a new one if it doesn't.
+//             bool haveAppCertificate = config.SecurityConfiguration.ApplicationCertificate != null && !string.IsNullOrEmpty(config.SecurityConfiguration.ApplicationCertificate.SubjectName);
+//             if (!haveAppCertificate)
+//             {
+//                 throw new Exception("Application certificate must be configured!");
+//             }
+//
+//             var cert = config.SecurityConfiguration.ApplicationCertificate.Find(true).Result;
+//             TimeZoneInfo estZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
+//             DateTime estTime = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, estZone);
+//             if (cert == null)
+//             {
+// #pragma warning disable CS0618 // Type or member is obsolete
+//                 cert = CertificateFactory.CreateCertificate(
+//                     config.SecurityConfiguration.ApplicationCertificate.StoreType,
+//                     config.SecurityConfiguration.ApplicationCertificate.StorePath,
+//                     null,
+//                     config.ApplicationUri,
+//                     config.ApplicationName,
+//                     config.SecurityConfiguration.ApplicationCertificate.SubjectName,
+//                     null,
+//                     2048, // Key size.
+//                     estTime - TimeSpan.FromDays(1),
+//                     12, // Validity period in months.
+//                     0, // pathLengthConstraint (ushort)
+//                     false // isCA (bool)
+//                 );
+// #pragma warning restore CS0618 // Type or member is obsolete
+//             }
+//
+//
+//             config.SecurityConfiguration.ApplicationCertificate.Certificate = cert;
+//
+//             return config;
+//         }
         public static async Task<ApplicationConfiguration> InitializeApplication()
         {
             var config = CreateApplicationConfiguration();
             await config.Validate(ApplicationType.Client);
-
-            // Check if the application certificate exists, and create a new one if it doesn't.
-            bool haveAppCertificate = config.SecurityConfiguration.ApplicationCertificate != null && !string.IsNullOrEmpty(config.SecurityConfiguration.ApplicationCertificate.SubjectName);
-            if (!haveAppCertificate)
-            {
-                throw new Exception("Application certificate must be configured!");
-            }
-
-            var cert = config.SecurityConfiguration.ApplicationCertificate.Find(true).Result;
-            TimeZoneInfo estZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
-            DateTime estTime = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, estZone);
-            if (cert == null)
-            {
-#pragma warning disable CS0618 // Type or member is obsolete
-                cert = CertificateFactory.CreateCertificate(
-                    config.SecurityConfiguration.ApplicationCertificate.StoreType,
-                    config.SecurityConfiguration.ApplicationCertificate.StorePath,
-                    null,
-                    config.ApplicationUri,
-                    config.ApplicationName,
-                    config.SecurityConfiguration.ApplicationCertificate.SubjectName,
-                    null,
-                    2048, // Key size.
-                    estTime - TimeSpan.FromDays(1),
-                    12, // Validity period in months.
-                    0, // pathLengthConstraint (ushort)
-                    false // isCA (bool)
-                );
-#pragma warning restore CS0618 // Type or member is obsolete
-            }
-
-
+            var cert = FindCertificate("CognexEdgeHistorianOpcUaClient");
             config.SecurityConfiguration.ApplicationCertificate.Certificate = cert;
 
             return config;
+        }
+        static X509Certificate2 FindCertificate(string certName)
+        {
+            // Access the Personal store for the current user
+            X509Store store = new X509Store(StoreName.My, StoreLocation.CurrentUser);
+
+            try
+            {
+                store.Open(OpenFlags.ReadOnly);
+
+                // Find the certificate by name
+                X509Certificate2Collection certificates = store.Certificates.Find(X509FindType.FindBySubjectName, certName, false);
+
+                return certificates.Count > 0 ? certificates[0] : null;
+            }
+            finally
+            {
+                store.Close();
+            }
         }
 
         private static ApplicationConfiguration CreateApplicationConfiguration()
@@ -278,6 +308,8 @@ namespace CognexEdgeMonitoringService.Core
             double elapsedMilliseconds;
             try
             {
+                if (!bool.Parse(OPCUAUtils.ReadTagValue(cognexSession.Session, cameraOnlineNode).Value.ToString()))
+                    return;
                 stopwatch.Restart();
                 
                 //stopwatch.Stop();

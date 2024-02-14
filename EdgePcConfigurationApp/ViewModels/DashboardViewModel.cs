@@ -302,9 +302,8 @@ namespace EdgePcConfigurationApp.ViewModels
             }
             catch (Exception ex)
             {
-                ErrorMessage =
-                    "We encountered an error while attempting to connect to the camera. Please double check connections and IP Address then try again.";
-                Trace.WriteLine($"Error while attempting to connect to camera. Error Message: {ex.Message}");
+                ErrorMessage = ex.Message;
+                    Trace.WriteLine($"Error while attempting to connect to camera. Error Message: {ex.Message}");
                 camera.Connecting = false;
             }
         }

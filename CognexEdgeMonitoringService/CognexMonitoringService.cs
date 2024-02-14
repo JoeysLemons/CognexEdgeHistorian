@@ -14,6 +14,7 @@ using System.Linq;
 using CognexEdgeMonitoringService;
 using Opc.Ua.Server;
 using Session = Opc.Ua.Client.Session;
+using System.IO;
 
 namespace CognexEdgeMonitoringService
 {
@@ -31,10 +32,11 @@ namespace CognexEdgeMonitoringService
         public static string imageFileNameNodeID;
         public string pcGUID;
         public int pcID;
+        private Timer cameraMonitorTimer;
         public CognexMonitoringService()
         {
             InitializeComponent();
-            eventLog.Source = "CognexMonitoringService";
+            eventLog.Source = "DataPulseMonitor";
             fileWriterQueue = new FileWriterQueue(@"C:\Users\jverstraete\Desktop\DataDumps\Run1.csv");
         }
 
@@ -51,9 +53,13 @@ namespace CognexEdgeMonitoringService
 
             try
             {
+                eventLog.WriteEntry("1");
                 SetDBConnectionString();
+                eventLog.WriteEntry("2");
                 GetPcId();
-                SpawnCameraMonitors();
+                eventLog.WriteEntry("3");
+                cameraMonitorTimer = new Timer(SpawnCameraMonitors, null, 0, 30000);
+
             }
             catch (Exception e)
             {
@@ -114,7 +120,7 @@ namespace CognexEdgeMonitoringService
 
         private void SetDBConnectionString()
         {
-            var filePath = @"C:\Users\jverstraete\source\repos\CognexEdgeHistorian\EdgePcConfigurationApp\AppSettings.xml";
+            var filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "AppSettings.xml");
             XmlDocument doc = new XmlDocument();
             doc.Load(filePath);
             XmlNode rootNode = doc.DocumentElement;
@@ -126,20 +132,18 @@ namespace CognexEdgeMonitoringService
             DatabaseUtils.ConnectionString = connectionString;
         }
 
-        private void SpawnCameraMonitors()
+        private void SpawnCameraMonitors(object state)
         {
-            List<string> cameraAddresses = new List<string>();
-            while (true)
+            List<string> cameraAddresses = DatabaseUtils.GetCamerasOnPC(pcID);
+    
+            foreach (string address in cameraAddresses)
             {
-                cameraAddresses = DatabaseUtils.GetCamerasOnPC(pcID);
-                foreach (string address in cameraAddresses)
-                {
-                    if(ConnectedCameras.Any(session => session.Endpoint == address))    //Skip addresses that are already connected
-                        continue;
-                    Task.Run(() => CameraMonitor(address));
-                }
-                Thread.Sleep(30000);
+                if (ConnectedCameras.Any(session => session.Endpoint == address))
+                    continue;
+                Task.Run(() => CameraMonitor(address));
             }
+
+            eventLog.WriteEntry("Connected to cameras. Monitoring will continue.");
         }
 
         private async Task CameraMonitor(string ipAddress)
